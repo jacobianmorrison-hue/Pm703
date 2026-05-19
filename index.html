@@ -421,6 +421,9 @@ function weekCompletionLabel(wk) {
 let drag = null; // { weekNum, day, idx, el, ghost }
 
 function startDrag(e, weekNum, day, idx, sessionEl) {
+  // Don't drag if tapping the tick button
+  const target = e.target || e.srcElement;
+  if (target.closest('.tick-btn')) return;
   e.preventDefault();
   e.stopPropagation();
 
@@ -591,17 +594,16 @@ function renderPlan() {
             <div class="session-card ${done ? 'done' : ''}"
                  data-idx="${idx}"
                  style="--session-color:${isRest ? 'var(--border)' : stype.color}"
-                 onmousedown="${isRest ? '' : `startDrag(event,${wk.week},'${day}',${idx},this)`}"
-                 ontouchstart="${isRest ? '' : `startDrag(event,${wk.week},'${day}',${idx},this)`}">
+                 onmousedown="startDrag(event,${wk.week},'${day}',${idx},this)"
+                 ontouchstart="startDrag(event,${wk.week},'${day}',${idx},this)">
               <span class="session-icon">${stype.icon}</span>
               <div class="session-body">
                 <div class="session-label">${stype.label}</div>
                 <div class="session-detail">${escapeHtml(session.detail)}</div>
               </div>
-              ${isRest ? '' : `
-              <button class="tick-btn" onclick="event.stopPropagation();toggleComplete(${wk.week},'${day}',${idx})" title="Mark complete">
+              <button class="tick-btn" onclick="event.stopPropagation();toggleComplete(${wk.week},'${day}',${idx})" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="Mark complete">
                 ${done ? '✓' : ''}
-              </button>`}
+              </button>
             </div>`;
       });
 
