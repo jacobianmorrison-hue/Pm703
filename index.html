@@ -292,6 +292,21 @@ body {
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   border-radius: 8px; max-width: 320px;
 }
+.drag-handle {
+  display: flex; flex-direction: column; justify-content: center;
+  align-items: center; gap: 3px;
+  padding: 0 10px 0 6px;
+  cursor: grab; flex-shrink: 0; align-self: stretch;
+  border-left: 1px solid var(--border);
+  opacity: 0.35; transition: opacity 0.15s;
+  touch-action: none;
+}
+.drag-handle:hover, .drag-handle:active { opacity: 0.9; cursor: grabbing; }
+.drag-handle span {
+  display: block; width: 14px; height: 2px;
+  background: var(--text2); border-radius: 1px;
+}
+.session-card:active { transform: none; opacity: 1; }
 </style>
 </head>
 <body>
@@ -386,8 +401,20 @@ function updateLog(weekNum, day, idx, field, value) {
   if (!state.logs[key]) state.logs[key] = { note: '', variant: '' };
   state.logs[key][field] = value;
   saveState(state);
-  // Re-render just the log section without full re-render
-  renderLogSection(weekNum, day, idx);
+  // Only re-render for note changes — variant changes preserve browser radio state
+  if (field === 'note') {
+    // Update just the log toggle button text/colour without replacing the whole panel
+    const logDiv = document.getElementById('log_' + key);
+    if (logDiv) {
+      const btn = logDiv.querySelector('button');
+      if (btn) {
+        const hasLog = value || (state.logs[key].variant && state.logs[key].variant !== '');
+        btn.style.color = hasLog ? 'var(--accent)' : 'var(--text3)';
+        const span = btn.querySelector('span:first-child');
+        if (span) span.innerHTML = hasLog ? '&#128221; Session log' : '+ Add session log';
+      }
+    }
+  }
 }
 
 function renderLogSection(weekNum, day, idx) {
@@ -409,6 +436,14 @@ function toggleLog(weekNum, day, idx) {
   }
 }
 
+function makeDragHandle(weekNum, day, idx) {
+  return '<div class="drag-handle"'
+    + ' onmousedown="event.stopPropagation();startDrag(event,' + weekNum + ',\'' + day + '\',' + idx + ',this)"'
+    + ' ontouchstart="event.stopPropagation();startDrag(event,' + weekNum + ',\'' + day + '\',' + idx + ',this)"'
+    + ' title="Drag to reschedule">'
+    + '<span></span><span></span><span></span></div>';
+}
+
 function buildLogSection(weekNum, day, idx, sessionType) {
   const key = sessionKey(weekNum, day, idx);
   return '<div id="log_' + key + '">' + buildLogHTML(weekNum, day, idx, sessionType) + '</div>';
@@ -420,6 +455,7 @@ function buildLogHTML(weekNum, day, idx, sessionType) {
   const key = sessionKey(weekNum, day, idx);
   const isOpen = !!state.openLogs[key];
   const hasLog = log.note || (log.variant && variants && log.variant !== variants[0]);
+  const stop = 'event.stopPropagation();';
 
   // Build variant radio buttons
   let variantHtml = '';
@@ -427,13 +463,16 @@ function buildLogHTML(weekNum, day, idx, sessionType) {
     const radios = variants.map(function(v, vi) {
       const checked = (log.variant === v || (!log.variant && vi === 0)) ? ' checked' : '';
       const esc = v.replace(/"/g, '&quot;');
-      return '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-bottom:4px;cursor:pointer">'
+      return '<label onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" '
+           + 'style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-bottom:4px;cursor:pointer">'
            + '<input type="radio" name="var_' + key + '" value="' + esc + '"' + checked
+           + ' onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"'
            + ' onchange="updateLog(' + weekNum + ',\'' + day + '\',' + idx + ',\'variant\',this.value)"'
-           + ' style="accent-color:var(--accent)">'
+           + ' style="accent-color:var(--accent);width:16px;height:16px">'
            + esc + '</label>';
     });
-    variantHtml = '<div style="margin-bottom:8px">' + radios.join('') + '</div>';
+    variantHtml = '<div onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" '
+                + 'style="margin-bottom:8px">' + radios.join('') + '</div>';
   }
 
   const logBtnColor = hasLog ? 'var(--accent)' : 'var(--text3)';
@@ -442,8 +481,8 @@ function buildLogHTML(weekNum, day, idx, sessionType) {
   const chevron = isOpen ? '&#9650;' : '&#9660;';
   const noteEsc = escapeHtml(log.note || '');
 
-  return '<div style="border-top:1px solid var(--border)">'
-    + '<button onclick="event.stopPropagation();toggleLog(' + weekNum + ',\'' + day + '\',' + idx + ')"'
+  return '<div style="border-top:1px solid var(--border)" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">'
+    + '<button onclick="' + stop + 'toggleLog(' + weekNum + ',\'' + day + '\',' + idx + ')"'
     + ' onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"'
     + ' style="width:100%;display:flex;justify-content:space-between;align-items:center;'
     + 'padding:6px 10px;background:none;border:none;color:' + logBtnColor + ';'
@@ -451,13 +490,14 @@ function buildLogHTML(weekNum, day, idx, sessionType) {
     + '<span>' + logBtnText + '</span>'
     + '<span id="logchev_' + key + '">' + chevron + '</span>'
     + '</button>'
-    + '<div id="logpanel_' + key + '" style="display:' + panelDisplay + ';padding:8px 10px 10px">'
+    + '<div id="logpanel_' + key + '" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" '
+    + 'style="display:' + panelDisplay + ';padding:8px 10px 10px">'
     + variantHtml
     + '<div style="font-size:10px;color:var(--text3);margin-bottom:4px;letter-spacing:0.5px">NOTES / WHAT YOU DID</div>'
     + '<textarea'
     + ' onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"'
     + ' oninput="updateLog(' + weekNum + ',\'' + day + '\',' + idx + ',\'note\',this.value)"'
-    + ' placeholder="e.g. Did 75% — stopped at 8km, HR spiked. Legs tired from yesterday."'
+    + ' placeholder="What did you actually do?"'
     + ' style="width:100%;min-height:70px;background:var(--bg);border:1px solid var(--border2);'
     + 'border-radius:6px;color:var(--text);font-size:12px;padding:8px;resize:vertical;font-family:inherit;line-height:1.5">'
     + noteEsc
@@ -527,9 +567,9 @@ function weekCompletionLabel(wk) {
 let drag = null; // { weekNum, day, idx, el, ghost }
 
 function startDrag(e, weekNum, day, idx, sessionEl) {
-  // Don't drag if tapping the tick button
+  // Only drag from the dedicated handle
   const target = e.target || e.srcElement;
-  if (target.closest('.tick-btn')) return;
+  if (!target.closest('.drag-handle')) return;
   e.preventDefault();
   e.stopPropagation();
 
@@ -700,8 +740,8 @@ function renderPlan() {
             <div class="session-card ${done ? 'done' : ''}"
                  data-idx="${idx}"
                  style="--session-color:${isRest ? 'var(--border)' : stype.color};flex-direction:column;padding:0"
-                 onmousedown="startDrag(event,${wk.week},'${day}',${idx},this)"
-                 ontouchstart="startDrag(event,${wk.week},'${day}',${idx},this)">
+                 onmousedown="event.stopPropagation()"
+                 ontouchstart="event.stopPropagation()">
               <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 10px">
                 <span class="session-icon">${stype.icon}</span>
                 <div class="session-body">
@@ -712,6 +752,7 @@ function renderPlan() {
                   ${done ? '✓' : ''}
                 </button>
               </div>
+              ${isRest ? '' : makeDragHandle(wk.week, day, idx)}
               ${isRest ? '' : buildLogSection(wk.week, day, idx, session.type)}
             </div>`;
       });
