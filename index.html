@@ -344,14 +344,30 @@ const WEEKS_TEMPLATE = []; // replaced below
 
 // ── State ────────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = 'pm703_state_v2';
+const STORAGE_KEY = 'pm703_state_v3';
+
+// Variants available per session type
+const VARIANTS = {
+  swim_ow:        ['Open Water (default)', 'Pool instead'],
+  swim_easy:      ['Pool (default)', 'Open Water instead'],
+  swim_intervals: ['Pool (default)', 'Open Water instead'],
+  run_easy:       ['Outdoor (default)', 'Treadmill instead'],
+  run_tempo:      ['Outdoor (default)', 'Treadmill instead'],
+  run_intervals:  ['Outdoor (default)', 'Treadmill instead'],
+  run_long:       ['Outdoor (default)', 'Treadmill instead'],
+  bike_easy:      ['Outdoor (default)', 'Indoor trainer instead'],
+  bike_intervals: ['Outdoor (default)', 'Indoor trainer instead'],
+  bike_long:      ['Outdoor (default)', 'Indoor trainer instead'],
+  bike_gym:       ['Indoor trainer (default)', 'Outdoor instead'],
+  brick:          ['Outdoor (default)', 'Indoor trainer + treadmill'],
+};
 
 function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) return JSON.parse(saved);
   } catch(e) {}
-  return { completed: {}, schedule: null, openWeeks: {} };
+  return { completed: {}, schedule: null, openWeeks: {}, logs: {}, openLogs: {} };
 }
 
 function saveState(state) {
@@ -359,6 +375,96 @@ function saveState(state) {
 }
 
 let state = loadState();
+
+// ── Log helpers ──────────────────────────────────────────────────────────────
+function getLog(weekNum, day, idx) {
+  return state.logs[sessionKey(weekNum, day, idx)] || { note: '', variant: '' };
+}
+
+function updateLog(weekNum, day, idx, field, value) {
+  const key = sessionKey(weekNum, day, idx);
+  if (!state.logs[key]) state.logs[key] = { note: '', variant: '' };
+  state.logs[key][field] = value;
+  saveState(state);
+  // Re-render just the log section without full re-render
+  renderLogSection(weekNum, day, idx);
+}
+
+function renderLogSection(weekNum, day, idx) {
+  const logEl = document.getElementById('log_' + sessionKey(weekNum, day, idx));
+  if (logEl) logEl.innerHTML = buildLogHTML(weekNum, day, idx);
+}
+
+function toggleLog(weekNum, day, idx) {
+  const key = sessionKey(weekNum, day, idx);
+  state.openLogs[key] = !state.openLogs[key];
+  saveState(state);
+  const panel = document.getElementById('logpanel_' + key);
+  const chevron = document.getElementById('logchev_' + key);
+  if (panel) {
+    panel.style.display = state.openLogs[key] ? 'block' : 'none';
+  }
+  if (chevron) {
+    chevron.textContent = state.openLogs[key] ? '▲' : '▼';
+  }
+}
+
+function buildLogSection(weekNum, day, idx, sessionType) {
+  const key = sessionKey(weekNum, day, idx);
+  return '<div id="log_' + key + '">' + buildLogHTML(weekNum, day, idx, sessionType) + '</div>';
+}
+
+function buildLogHTML(weekNum, day, idx, sessionType) {
+  const log = getLog(weekNum, day, idx);
+  const variants = VARIANTS[sessionType] || null;
+  const key = sessionKey(weekNum, day, idx);
+  const isOpen = !!state.openLogs[key];
+  const hasLog = log.note || (log.variant && variants && log.variant !== variants[0]);
+
+  // Build variant radio buttons
+  let variantHtml = '';
+  if (variants) {
+    const radios = variants.map(function(v, vi) {
+      const checked = (log.variant === v || (!log.variant && vi === 0)) ? ' checked' : '';
+      const esc = v.replace(/"/g, '&quot;');
+      return '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-bottom:4px;cursor:pointer">'
+           + '<input type="radio" name="var_' + key + '" value="' + esc + '"' + checked
+           + ' onchange="updateLog(' + weekNum + ',\'' + day + '\',' + idx + ',\'variant\',this.value)"'
+           + ' style="accent-color:var(--accent)">'
+           + esc + '</label>';
+    });
+    variantHtml = '<div style="margin-bottom:8px">' + radios.join('') + '</div>';
+  }
+
+  const logBtnColor = hasLog ? 'var(--accent)' : 'var(--text3)';
+  const logBtnText  = hasLog ? '&#128221; Session log' : '+ Add session log';
+  const panelDisplay = isOpen ? 'block' : 'none';
+  const chevron = isOpen ? '&#9650;' : '&#9660;';
+  const noteEsc = escapeHtml(log.note || '');
+
+  return '<div style="border-top:1px solid var(--border)">'
+    + '<button onclick="event.stopPropagation();toggleLog(' + weekNum + ',\'' + day + '\',' + idx + ')"'
+    + ' onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"'
+    + ' style="width:100%;display:flex;justify-content:space-between;align-items:center;'
+    + 'padding:6px 10px;background:none;border:none;color:' + logBtnColor + ';'
+    + 'font-size:10px;cursor:pointer;letter-spacing:0.5px">'
+    + '<span>' + logBtnText + '</span>'
+    + '<span id="logchev_' + key + '">' + chevron + '</span>'
+    + '</button>'
+    + '<div id="logpanel_' + key + '" style="display:' + panelDisplay + ';padding:8px 10px 10px">'
+    + variantHtml
+    + '<div style="font-size:10px;color:var(--text3);margin-bottom:4px;letter-spacing:0.5px">NOTES / WHAT YOU DID</div>'
+    + '<textarea'
+    + ' onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"'
+    + ' oninput="updateLog(' + weekNum + ',\'' + day + '\',' + idx + ',\'note\',this.value)"'
+    + ' placeholder="e.g. Did 75% — stopped at 8km, HR spiked. Legs tired from yesterday."'
+    + ' style="width:100%;min-height:70px;background:var(--bg);border:1px solid var(--border2);'
+    + 'border-radius:6px;color:var(--text);font-size:12px;padding:8px;resize:vertical;font-family:inherit;line-height:1.5">'
+    + noteEsc
+    + '</textarea>'
+    + '</div>'
+    + '</div>';
+}
 
 // Deep-clone original weeks for reset + overlay custom schedule
 function getWeeks() {
@@ -593,17 +699,20 @@ function renderPlan() {
         html += `
             <div class="session-card ${done ? 'done' : ''}"
                  data-idx="${idx}"
-                 style="--session-color:${isRest ? 'var(--border)' : stype.color}"
+                 style="--session-color:${isRest ? 'var(--border)' : stype.color};flex-direction:column;padding:0"
                  onmousedown="startDrag(event,${wk.week},'${day}',${idx},this)"
                  ontouchstart="startDrag(event,${wk.week},'${day}',${idx},this)">
-              <span class="session-icon">${stype.icon}</span>
-              <div class="session-body">
-                <div class="session-label">${stype.label}</div>
-                <div class="session-detail">${escapeHtml(session.detail)}</div>
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 10px">
+                <span class="session-icon">${stype.icon}</span>
+                <div class="session-body">
+                  <div class="session-label">${stype.label}</div>
+                  <div class="session-detail">${escapeHtml(session.detail)}</div>
+                </div>
+                <button class="tick-btn" onclick="event.stopPropagation();toggleComplete(${wk.week},'${day}',${idx})" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="Mark complete">
+                  ${done ? '✓' : ''}
+                </button>
               </div>
-              <button class="tick-btn" onclick="event.stopPropagation();toggleComplete(${wk.week},'${day}',${idx})" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="Mark complete">
-                ${done ? '✓' : ''}
-              </button>
+              ${isRest ? '' : buildLogSection(wk.week, day, idx, session.type)}
             </div>`;
       });
 
@@ -677,7 +786,7 @@ function renderZones() {
 function renderTargets() {
   const targets = [
     { leg: "🏊 Swim",  dist: "1.9 km",  current: "2:14/100m",    target: "2:00–2:05/100m", time: "38–40 min",  color: "#0ea5e9", note: "Close now. Intervals bridge the gap." },
-    { leg: "🚴 Bike",  dist: "90 km",   current: "30 km/h",       target: "36–38 km/h",     time: "2h23–2h30",  color: "#8b5cf6", note: "Biggest gap. Priority of the plan." },
+    { leg: "🚴 Bike",  dist: "90 km",   current: "30 km/h",       target: "32–34 km/h",     time: "2h39–2h49",  color: "#8b5cf6", note: "Biggest gap. Priority of the plan." },
     { leg: "🏃 Run",   dist: "21.1 km", current: "5:19/km (tri)", target: "5:45–5:55/km",   time: "2h01–2h05",  color: "#10b981", note: "Off 90km bike. Smart pacing wins." },
     { leg: "⏱ T1+T2", dist: "—",        current: "—",             target: "~5 min",          time: "~5 min",     color: "#64748b", note: "Practice in brick sessions." },
   ];
@@ -699,9 +808,9 @@ function renderTargets() {
   html += `</div>
     <div class="target-total">
       <div class="target-total-label">Total Target</div>
-      <div class="target-total-val">5:05–5:20</div>
-      <div class="target-total-sub">Conservative 5:20 · Realistic 5:10 · Stretch sub-5:05</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:6px">Average age-group 70.3 finish ~5:51. Your Lake Mac data puts you well under that.</div>
+      <div class="target-total-val">5:20–5:35</div>
+      <div class="target-total-sub">Conservative 5:35 · Realistic 5:25 · Stretch sub-5:15</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">Average age-group 70.3 finish ~5:51. A 5:20–5:35 is still a strong result — well inside the average.</div>
     </div>
   </div>`;
 
@@ -1478,7 +1587,7 @@ const WEEKS_DATA = [
         { type: "rest", detail: "Light 10 min walk. Rack bike at transition. Attend race briefing. Familiar carb dinner. In bed by 9pm. Race morning alarm set." },
       ],
       Sun: [
-        { type: "race", detail: "🏆 RACE DAY — IRONMAN 70.3 PORT MACQUARIE\n\n📍 Hastings River swim → Pacific coast bike → Port Macquarie run\n\n🏊 SWIM 1.9km: Target 38–40 min (2:00–2:05/100m). Start controlled — don't sprint the first 200m. Find rhythm by buoy 2.\n\n🚴 BIKE 90km: Target 2h23–2h30 (36–38 km/h avg). First 20km Z2. Race Z3 from km 20. Eat every 20 min (200–250 cal/hr).\n\n🏃 RUN 21.1km: Target 2h01–2h05 (5:45–5:55/km). Start first 3km at 6:05/km even if feeling great. Negative split wins.\n\n🎯 TOTAL: 5:05–5:20\nConservative: 5:20 · Realistic: 5:10 · Stretch: sub-5:05\n\nYOU'VE DONE THE WORK. RACE YOUR PLAN." },
+        { type: "race", detail: "🏆 RACE DAY — IRONMAN 70.3 PORT MACQUARIE\n\n📍 Hastings River swim → Pacific coast bike → Port Macquarie run\n\n🏊 SWIM 1.9km: Target 38–40 min (2:00–2:05/100m). Start controlled — don't sprint the first 200m. Find rhythm by buoy 2.\n\n🚴 BIKE 90km: Target 2h39–2h49 (32–34 km/h avg). First 20km Z2. Build to Z3 from km 20. Eat every 20 min (200–250 cal/hr).\n\n🏃 RUN 21.1km: Target 2h01–2h05 (5:45–5:55/km). Start first 3km at 6:05/km even if feeling great. Negative split wins.\n\n🎯 TOTAL: 5:20–5:35\nConservative: 5:35 · Realistic: 5:25 · Stretch: sub-5:15\n\nYOU'VE DONE THE WORK. RACE YOUR PLAN." },
       ],
     }
   },
