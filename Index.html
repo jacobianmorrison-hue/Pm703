@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM 70.3">
+<meta name="theme-color" content="#070b14">
+<title>Port Macquarie 70.3 — Alt Plan</title>
+<style>
+:root {
+  --bg: #070b14;
+  --card: #0f172a;
+  --card2: #0a0f1a;
+  --border: #1e293b;
+  --border2: #334155;
+  --text: #e5e7eb;
+  --text2: #94a3b8;
+  --text3: #475569;
+  --accent: #3b82f6;
+  --accent2: #1d4ed8;
+  --green: #4ade80;
+  --yellow: #fbbf24;
+  --orange: #f97316;
+  --purple: #c084fc;
+  --red: #ef4444;
+  --done-bg: #052e16;
+  --done-text: #4ade80;
+  --drag-over: #1e3a5f;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  padding-top: var(--safe-top);
+  padding-bottom: calc(var(--safe-bot) + 56px);
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.header {
+  position: sticky; top: var(--safe-top); z-index: 100;
+  background: rgba(7,11,20,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px 10px;
+}
+.header-title { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+.header-sub { font-size: 11px; color: var(--text3); margin-top: 1px; letter-spacing: 0.3px; }
+.header-row { display: flex; justify-content: space-between; align-items: center; }
+.progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-top: 8px; }
+.progress-bar { height: 3px; background: linear-gradient(90deg, var(--accent), var(--purple)); border-radius: 2px; transition: width 0.4s; }
+.progress-label { font-size: 10px; color: var(--text3); margin-top: 4px; text-align: right; }
+
+/* ── Phase nav ── */
+.phase-nav {
+  display: flex; overflow-x: auto; gap: 0;
+  background: var(--card2);
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
+}
+.phase-nav::-webkit-scrollbar { display: none; }
+.phase-btn {
+  flex: 0 0 auto; padding: 10px 14px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+  background: none; border: none; color: var(--text3);
+  cursor: pointer; white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.phase-btn.active { color: var(--phase-color); border-bottom-color: var(--phase-color); }
+
+/* ── Week cards ── */
+.weeks-container { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.week-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.week-card.drag-over { border-color: var(--accent); background: var(--drag-over); }
+
+.week-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
+}
+.week-num {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  flex-shrink: 0;
+  border: 2px solid var(--phase-color);
+  color: var(--phase-color);
+}
+.week-num.recovery { border-color: var(--border2); color: var(--text3); }
+.week-info { flex: 1; min-width: 0; }
+.week-title { font-size: 13px; font-weight: 600; }
+.week-note { font-size: 11px; color: var(--text3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.week-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.week-hours { font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; }
+.week-progress { font-size: 10px; color: var(--done-text); font-weight: 600; }
+.week-chevron { font-size: 11px; color: var(--text3); transition: transform 0.2s; }
+.week-card.open .week-chevron { transform: rotate(180deg); }
+
+/* ── Days ── */
+.days-container { display: none; border-top: 1px solid var(--border); }
+.week-card.open .days-container { display: block; }
+
+.day-row {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.day-row:last-child { border-bottom: none; }
+.day-row.drag-over-day { background: #0d2044; }
+
+.day-label {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px 4px;
+}
+.day-name {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  color: var(--text3); text-transform: uppercase;
+  width: 28px;
+}
+.day-drag-hint {
+  font-size: 9px; color: var(--border2);
+  margin-left: auto;
+  opacity: 0; transition: opacity 0.2s;
+}
+.day-row:hover .day-drag-hint { opacity: 1; }
+
+.sessions-list { padding: 0 10px 8px; display: flex; flex-direction: column; gap: 5px; }
+
+/* ── Session cards ── */
+.session-card {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 10px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--session-color, var(--border));
+  border-radius: 8px;
+  cursor: grab;
+  transition: all 0.15s;
+  position: relative;
+}
+.session-card:active { cursor: grabbing; transform: scale(0.98); opacity: 0.9; }
+.session-card.dragging { opacity: 0.4; transform: scale(0.97); }
+.session-card.done {
+  background: var(--done-bg);
+  border-color: #14532d;
+  border-left-color: var(--green);
+  opacity: 0.75;
+}
+.session-card.done .session-detail { text-decoration: line-through; color: var(--text3); }
+.session-card.drag-over-session { border-color: var(--accent); background: var(--drag-over); }
+
+.session-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.session-body { flex: 1; min-width: 0; }
+.session-label {
+  font-size: 11px; font-weight: 700;
+  color: var(--session-color, var(--text));
+  letter-spacing: 0.2px;
+}
+.session-detail {
+  font-size: 12px; color: var(--text2);
+  line-height: 1.5; margin-top: 2px;
+  white-space: pre-line;
+}
+.session-fields {
+  display: flex; gap: 12px; margin-top: 5px; margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+.session-field {
+  display: flex; align-items: baseline; gap: 4px;
+}
+.field-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--text3);
+  flex-shrink: 0;
+}
+.field-val {
+  font-size: 12px; font-weight: 600;
+  color: var(--text); font-variant-numeric: tabular-nums;
+}
+.session-plan {
+  font-size: 12px; color: var(--text2);
+  line-height: 1.55; margin-top: 2px;
+  padding-top: 5px;
+  border-top: 1px solid var(--border);
+  white-space: pre-line;
+}
+.session-card.done .session-fields .field-val { color: var(--text3); }
+.session-card.done .session-plan { color: var(--text3); text-decoration: line-through; }
+.session-card.done .session-label { color: var(--done-text); }
+
+.tick-btn {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border2);
+  background: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: all 0.15s;
+  color: transparent;
+  font-size: 13px;
+}
+.tick-btn:hover { border-color: var(--green); }
+.session-card.done .tick-btn {
+  background: var(--green);
+  border-color: var(--green);
+  color: #052e16;
+}
+.drag-handle {
+  color: var(--border2); font-size: 14px; flex-shrink: 0;
+  cursor: grab; padding: 2px 0;
+  touch-action: none;
+}
+
+/* ── Bottom tab bar ── */
+.tab-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding-bottom: var(--safe-bot);
+  background: rgba(7,11,20,0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 200;
+}
+.tab-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 8px 0 6px;
+  background: none; border: none; color: var(--text3);
+  cursor: pointer; font-size: 10px; gap: 3px;
+  transition: color 0.15s;
+}
+.tab-btn.active { color: var(--accent); }
+.tab-icon { font-size: 20px; }
+
+/* ── Panels (Zones, Targets) ── */
+.panel { display: none; padding: 12px; }
+.panel.active { display: block; }
+
+.panel-section { margin-bottom: 20px; }
+.panel-title {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  color: var(--text3); text-transform: uppercase;
+  margin-bottom: 10px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Zone cards */
+.zone-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-left: 3px solid var(--zone-color);
+  border-radius: 8px; padding: 10px 12px;
+  margin-bottom: 6px;
+}
+.zone-name { font-size: 12px; font-weight: 700; color: var(--zone-color); }
+.zone-metrics {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 2px 10px; margin-top: 5px;
+}
+.zone-metric { font-size: 11px; color: var(--text2); }
+.zone-metric span { color: var(--text3); font-size: 10px; }
+.zone-desc { font-size: 10px; color: var(--text3); margin-top: 4px; font-style: italic; }
+
+/* Target cards */
+.target-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.target-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px;
+}
+.target-leg { font-size: 11px; color: var(--text3); }
+.target-val { font-size: 20px; font-weight: 300; font-variant-numeric: tabular-nums; margin: 4px 0 2px; }
+.target-time { font-size: 13px; font-weight: 600; }
+.target-note { font-size: 10px; color: var(--text3); margin-top: 4px; font-style: italic; }
+.target-total {
+  background: var(--card); border: 1px solid var(--yellow);
+  border-radius: 10px; padding: 14px; text-align: center; margin-top: 8px;
+}
+.target-total-label { font-size: 10px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
+.target-total-val { font-size: 36px; font-weight: 200; color: var(--yellow); font-variant-numeric: tabular-nums; margin: 4px 0; }
+.target-total-sub { font-size: 11px; color: var(--text3); }
+
+/* Long run chart */
+.chart-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+.chart-title { font-size: 10px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+.chart-bars { display: flex; align-items: flex-end; gap: 2px; height: 80px; border-bottom: 1px solid var(--border); }
+.chart-bar { flex: 1; border-radius: 2px 2px 0 0; min-width: 4px; transition: opacity 0.2s; cursor: default; }
+.chart-labels { display: flex; gap: 2px; margin-top: 4px; }
+.chart-lbl { flex: 1; text-align: center; font-size: 7px; color: var(--text3); }
+
+/* Reset button */
+.reset-btn {
+  width: 100%; padding: 12px;
+  background: none; border: 1px solid var(--border2);
+  color: var(--text3); border-radius: 8px;
+  font-size: 13px; cursor: pointer; margin-top: 16px;
+}
+.reset-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* Dragging ghost */
+.drag-ghost {
+  position: fixed; pointer-events: none; z-index: 9999;
+  opacity: 0.9; transform: scale(1.02) rotate(1deg);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  border-radius: 8px; max-width: 320px;
+}
+.drag-handle {
+  position: absolute; top: 6px; left: 6px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 3px;
+  padding: 3px;
+  opacity: 0.2; transition: opacity 0.2s;
+  cursor: grab; touch-action: none;
+  border-radius: 3px;
+}
+.drag-handle:hover, .drag-handle:active { opacity: 0.7; cursor: grabbing; }
+.drag-handle span {
+  display: block; width: 3px; height: 3px;
+  border-radius: 50%; background: var(--text2);
+}
+.session-card { position: relative; }
+.session-card:active { transform: none; opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+'use strict';
+
+// ── Data ────────────────────────────────────────────────────────────────────
+
+const ZONES = {
+  Z1: { label: "Z1 Recovery",  color: "#4ade80", hr: "< 130 bpm",   runPace: "> 6:45/km",    swimPace: "> 2:35/100m",    bikePace: "< 28 km/h",  desc: "Very easy — fully conversational, could sing" },
+  Z2: { label: "Z2 Endurance", color: "#a3e635", hr: "130–148 bpm", runPace: "6:00–6:45/km", swimPace: "2:10–2:35/100m", bikePace: "28–34 km/h", desc: "Comfortable — long sentences, nose breathing possible" },
+  Z3: { label: "Z3 Tempo",     color: "#fbbf24", hr: "148–160 bpm", runPace: "5:20–5:55/km", swimPace: "1:58–2:10/100m", bikePace: "34–38 km/h", desc: "Comfortably hard — short sentences, sustainable 20–40 min" },
+  Z4: { label: "Z4 Threshold", color: "#f97316", hr: "160–172 bpm", runPace: "4:55–5:20/km", swimPace: "1:48–1:58/100m", bikePace: "38–42 km/h", desc: "Hard — 1–2 words only, sustainable ~10–20 min" },
+  Z5: { label: "Z5 VO2 Max",   color: "#ef4444", hr: "> 172 bpm",   runPace: "< 4:55/km",    swimPace: "< 1:48/100m",    bikePace: "> 42 km/h",  desc: "Very hard — short bursts 1–5 min max" },
+};
+
+const PHASES = [
+  { id: "base", name: "Phase 1: Base", weeks: "Wks 1–6", dates: "11 May – 21 Jun", color: "#4ade80", bg: "#052e16", focus: "2 swims/week (pool intervals Tue + open water Fri). Long run capped at 90 min (coach consensus). Polarised intensity — Z2 base or Z4/Z5 intervals, minimal Z3. Gym both sessions weekly. Recovery every 3 weeks (Wk 4).", weeklyHours: "7.5–9h" },
+  { id: "build1", name: "Phase 2: Build I", weeks: "Wks 7–12", dates: "22 Jun – 2 Aug", color: "#fbbf24", bg: "#1c1008", focus: "2 swims most weeks, 3 swims in peak weeks (9 & 10). Bike long ride hits full race distance (100+ km). Z4/Z5 intervals across all disciplines. Long run stays at 90 min. Recovery weeks 8 and 11.", weeklyHours: "9–11h" },
+  { id: "build2", name: "Phase 3: Build II", weeks: "Wks 13–18", dates: "3 Aug – 13 Sep", color: "#f97316", bg: "#1c0a04", focus: "Race-specific. 3 swims in peak weeks (13, 15, 16, 18), 2 otherwise. 1,900m non-stop swim efforts. Bike 110km long rides. Race rehearsal bricks. Run stays 90 min max off bigger bike days. Recovery weeks 14 and 17.", weeklyHours: "9–11.5h" },
+  { id: "peak", name: "Phase 4: Peak/Taper", weeks: "Wks 19–22", dates: "14 Sep – 18 Oct", color: "#c084fc", bg: "#0e0720", focus: "22-week plan — taper begins Week 19. Volume drops progressively. Intensity maintained in short bursts. One final recovery week (Wk 20). Race week (Wk 22) is minimum volume only. No gym race week.", weeklyHours: "3.5–9h" },
+];
+
+const ST = {
+  rest:           { icon: "🛌", color: "#374151", label: "Rest" },
+  swim_easy:      { icon: "🏊", color: "#0ea5e9", label: "Swim Easy" },
+  swim_ow:        { icon: "🌊", color: "#0284c7", label: "Open Water" },
+  swim_intervals: { icon: "🏊", color: "#0369a1", label: "Swim Intervals" },
+  run_easy:       { icon: "🏃", color: "#10b981", label: "Easy Run" },
+  run_tempo:      { icon: "🏃", color: "#f59e0b", label: "Tempo Run" },
+  run_intervals:  { icon: "🏃", color: "#ef4444", label: "Run Intervals" },
+  run_long:       { icon: "🏃", color: "#047857", label: "Long Run" },
+  bike_easy:      { icon: "🚴", color: "#8b5cf6", label: "Easy Ride" },
+  bike_intervals: { icon: "🚴", color: "#7c3aed", label: "Bike Intervals" },
+  bike_long:      { icon: "🚴", color: "#5b21b6", label: "Long Ride" },
+  bike_gym:       { icon: "⚙️", color: "#6d28d9", label: "Gym Bike" },
+  gym_legs:       { icon: "🏋️", color: "#dc2626", label: "Gym Legs" },
+  gym_upper:      { icon: "💪", color: "#be185d", label: "Gym Upper" },
+  brick:          { icon: "🧱", color: "#d97706", label: "Brick" },
+  race:           { icon: "🏆", color: "#fbbf24", label: "RACE DAY" },
+};
+
+const DAY_ORDER = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+// WEEKS_DATA placeholder — will be replaced by full data
+const WEEKS_TEMPLATE = []; // replaced below
+
+// ── State ────────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = 'pm703_alt_state_v1';
+
+// Variants available per session type
+const VARIANTS = {
+  swim_ow:        ['Open Water (default)', 'Pool instead'],
+  swim_easy:      ['Pool (default)', 'Open Water instead'],
+  swim_intervals: ['Pool (default)', 'Open Water instead'],
+  run_easy:       ['Outdoor (default)', 'Treadmill instead'],
+  run_tempo:      ['Outdoor (default)', 'Treadmill instead'],
+  run_intervals:  ['Outdoor (default)', 'Treadmill instead'],
+  run_long:       ['Outdoor (default)', 'Treadmill instead'],
+  bike_easy:      ['Outdoor (default)', 'Indoor trainer instead'],
+  bike_intervals: ['Outdoor (default)', 'Indoor trainer instead'],
+  bike_long:      ['Outdoor (default)', 'Indoor trainer instead'],
+  bike_gym:       ['Indoor trainer (default)', 'Outdoor instead'],
+  brick:          ['Outdoor (default)', 'Indoor trainer + treadmill'],
+};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return { completed: {}, schedule: null, openWeeks: {}, logs: {}, openLogs: {} };
+}
+
+function saveState(state) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+let state = loadState();
+
+// ── Log helpers ──────────────────────────────────────────────────────────────
+function getLog(weekNum, day, idx) {
+  return state.logs[sessionKey(weekNum, day, idx)] || { note: '', variant: '' };
+}
+
+function updateLog(weekNum, day, idx, field, value) {
+  const key = sessionKey(weekNum, day, idx);
+  if (!state.logs[key]) state.logs[key] = { note: '', variant: '' };
+  state.logs[key][field] = value;
+  saveState(state);
+  // Only re-render for note changes — variant changes preserve browser radio state
+  if (field === 'note') {
+    // Update just the log toggle button text/colour without replacing the whole panel
+    const logDiv = document.getElementById('log_' + key);
+    if (logDiv) {
+      const btn = logDiv.querySelector('button');
+      if (btn) {
+        const hasLog = value || (state.logs[key].variant && state.logs[key].variant !== '');
+        btn.style.color = hasLog ? 'var(--accent)' : 'var(--text3)';
+        const span = btn.querySelector('span:first-child');
+        if (span) span.innerHTML = hasLog ? '&#128221; Session log' : '+ Add session log';
+      }
+    }
+  }
+}
+
+function renderLogSection(weekNum, day, idx) {
+  const logEl = document.getElementById('log_' + sessionKey(weekNum, day, idx));
+  if (logEl) logEl.innerHTML = buildLogHTML(weekNum, day, idx);
+}
+
+function toggleLog(weekNum, day, idx) {
+  const key = sessionKey(weekNum, day, idx);
+  state.openLogs[key] = !state.openLogs[key];
+  saveState(state);
+  const panel = document.getElementById('logpanel_' + key);
+  const chevron = document.getElementById('logchev_' + key);
+  if (panel) {
+    panel.style.display = state.openLogs[key] ? 'block' : 'none';
+  }
+  if (chevron) {
+    chevron.textContent = state.openLogs[key] ? '▲' : '▼';
+  }
+}
+
+function makeDragHandle(weekNum, day, idx) {
+  return '<div class="drag-handle"'
+    + ' onmousedown="event.stopPropagation();startDrag(event,' + weekNum + ',\'' + day + '\',' + idx + ',this)"'
+    + ' ontouchstart="event.stopPropagation();startDrag(event,' + weekNum + ',\'' + day + '\',' + idx + ',this)"'
+    + ' title="Drag to reschedule">'
+    + '<span></span><span></span><span></span><span></span><span></span><span></span></div>';
+}
+
+function buildLogSection(weekNum, day, idx, sessionType) {
+  const key = sessionKey(weekNum, day, idx);
+  return '<div id="log_' + key + '">' + buildLogHTML(weekNum, day, idx, sessionType) + '</div>';
+}
+
+function buildLogHTML(weekNum, day, idx, sessionType) {
+  const log = getLog(weekNum, day, idx);
+  const variants = VARIANTS[sessionType] || null;
+  const key = sessionKey(weekNum, day, idx);
+  const isOpen = !!state.openLogs[key];
+  const hasLog = log.note || (log.variant && variants && log.variant !== variants[0]);
+  const stop = 'event.stopPropagation();';
+
+  // Build variant radio buttons
+  let variantHtml = '';
+  if (variants) {
+    const radios = variants.map(function(v, vi) {
+      const checked = (log.variant === v || (!log.variant && vi === 0)) ? ' checked' : '';
+      const esc = v.replace(/"/g, '&quot;');
+      return '<label onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" '
+           + 'style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-bottom:4px;cursor:pointer">'
+           + '<input type="radio" name="var_' + key + '" value="' + esc + '"' + checked
+           + ' onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"'
+           + ' onchange="updateLog(' + weekNum + ',\'' + day + '\',' + idx + ',\'variant\',this.value)"'
+           + ' style="accent-color:var(--accent);width:16px;height:16px">'
+           + esc + '</label>';
+    });
+    variantHtml = '<div onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" '
+                + 'style="margin-bottom:8px">' + radios.join('') + '</div>';
+  }
+
+  const logBtnColor = hasLog ? 'var(--accent)' : 'var(--text3)';
+  const logBtnText  = hasLog ? '&#128221; Session log' : '+ Add session log';
+  const panelDisplay = isOpen ? 'block' : 'none';
+  const chevron = isOpen ? '&#9650;' : '&#9660;';
+  const noteEsc = escapeHtml(log.note || '');
+
+  return '<div style="border-top:1px solid var(--border)" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">'
+    + '<button onclick="' + stop + 'toggleLog(' + weekNum + ',\'' + day + '\',' + idx + ')"'
+    + ' onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"'
+    + ' style="width:100%;display:flex;justify-content:space-between;align-items:center;'
+    + 'padding:6px 10px;background:none;border:none;color:' + logBtnColor + ';'
+    + 'font-size:10px;cursor:pointer;letter-spacing:0.5px">'
+    + '<span>' + logBtnText + '</span>'
+    + '<span id="logchev_' + key + '">' + chevron + '</span>'
+    + '</button>'
+    + '<div id="logpanel_' + key + '" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" '
+    + 'style="display:' + panelDisplay + ';padding:8px 10px 10px">'
+    + variantHtml
+    + '<div style="font-size:10px;color:var(--text3);margin-bottom:4px;letter-spacing:0.5px">NOTES / WHAT YOU DID</div>'
+    + '<textarea'
+    + ' onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"'
+    + ' oninput="updateLog(' + weekNum + ',\'' + day + '\',' + idx + ',\'note\',this.value)"'
+    + ' placeholder="What did you actually do?"'
+    + ' style="width:100%;min-height:70px;background:var(--bg);border:1px solid var(--border2);'
+    + 'border-radius:6px;color:var(--text);font-size:12px;padding:8px;resize:vertical;font-family:inherit;line-height:1.5">'
+    + noteEsc
+    + '</textarea>'
+    + '</div>'
+    + '</div>';
+}
+
+// Deep-clone original weeks for reset + overlay custom schedule
+function getWeeks() {
+  if (!state.schedule) return JSON.parse(JSON.stringify(WEEKS_DATA));
+  return JSON.parse(JSON.stringify(state.schedule));
+}
+
+// Ensure schedule exists in state (for mutations)
+function ensureSchedule() {
+  if (!state.schedule) state.schedule = JSON.parse(JSON.stringify(WEEKS_DATA));
+}
+
+// ── App state ─────────────────────────────────────────────────────────────────
+let activePhase = 'base';
+let activeTab   = 'plan';
+
+
+// ── Session detail parser ─────────────────────────────────────────────────────
+// Breaks raw detail string into { time, distance, plan } fields
+function parseSession(type, detail) {
+  let time = '', distance = '', plan = detail;
+
+  // Convert duration strings to minutes
+  function toMins(str) {
+    if (!str) return null;
+    const hm = str.match(/(\d+)h(\d+)m?/i);
+    if (hm) return parseInt(hm[1]) * 60 + parseInt(hm[2]);
+    const h = str.match(/(\d+)\s*h(?:rs?)?(?!\d)/i);
+    if (h) return parseInt(h[1]) * 60;
+    const m = str.match(/(\d+)\s*min/i);
+    if (m) return parseInt(m[1]);
+    return null;
+  }
+  function fmtMins(m) {
+    if (!m) return '—';
+    if (m >= 60) {
+      const h = Math.floor(m/60), r = m%60;
+      return r ? `${h}h ${r}min` : `${h}h`;
+    }
+    return `${m} min`;
+  }
+
+  // ── Swim OW ──
+  if (type === 'swim_ow') {
+    const mDist = detail.match(/~([\d,]{3,6})\s*m/);
+    const mTime = detail.match(/(\d+)\s*min/);
+    distance = mDist ? mDist[1].replace(',','') + ' m' : '—';
+    time     = mTime ? mTime[1] + ' min' : '—';
+    plan = detail.replace(/^Open water[\d\s\w,~\.–]+?\.\s*/i, '').trim() || detail;
+    return { time, distance, plan };
+  }
+
+  // ── Pool swim ──
+  if (type === 'swim_easy' || type === 'swim_intervals') {
+    const mDist = detail.match(/^Pool\s*(?:swim\s*)?([\d,]+)\s*m/i) || detail.match(/([\d,]{4,})\s*m/);
+    distance = mDist ? mDist[1].replace(',','') + ' m' : '—';
+    time = '—';
+    plan = detail.replace(/^Pool\s*(?:swim\s*)?[\s\d,m\.]+[\.\s]*/i, '').trim() || detail;
+    return { time, distance, plan };
+  }
+
+  // ── Runs ──
+  if (type.startsWith('run_')) {
+    const mKm    = detail.match(/([\d.]+)\s*km/);
+    const mRange = detail.match(/~([\d]+)[–\-]([\d]+)\s*min/);
+    const mMins  = detail.match(/(\d+)\s*min/);
+    const mHM    = detail.match(/~?([\d]+h[\d]+m?)/i);
+    distance = mKm ? mKm[1] + ' km' : '—';
+    if (mRange) time = '~' + mRange[1] + '–' + mRange[2] + ' min';
+    else if (mHM)  time = mHM[1];
+    else if (mMins) time = mMins[1] + ' min';
+    else time = '—';
+    plan = detail
+      .replace(/^Long run [\d.]+ km[^.]*\.\s*/i, '')
+      .replace(/^[\d.]+ km[^.]*\.\s*/i, '')
+      .replace(/^Long run [\d]+ min[^.]*\.\s*/i, '')
+      .replace(/^[\d]+ min(?:\s*run)?[^.]*\.\s*/i, '')
+      .replace(/^[\d]+ min easy[^.]*\.\s*/i, '')
+      .replace(/^~?[\d]+[–\-][\d]+ min\.?\s*/i, '')
+      .trim() || detail;
+    return { time, distance, plan };
+  }
+
+  // ── Bike gym ──
+  if (type === 'bike_gym') {
+    const mTime = detail.match(/(\d+)\s*min/);
+    time = mTime ? mTime[1] + ' min' : '—';
+    distance = '—';
+    plan = detail.replace(/^Gym bike \d+\s*min[^.]*\.\s*/i, '').trim() || detail;
+    return { time, distance, plan };
+  }
+
+  // ── Bike ──
+  if (type.startsWith('bike_')) {
+    const mKm   = detail.match(/~?([\d.]+[–\-]?[\d.]*)\s*km/);
+    const mHM   = detail.match(/([\d]+h[\d]+m?)/i);
+    const mMins = detail.match(/(\d+)\s*min/);
+    distance = mKm ? mKm[1] + ' km' : '—';
+    time = mHM ? mHM[1] : mMins ? mMins[1] + ' min' : '—';
+    plan = detail
+      .replace(/^[\d]+\s*min\.\s*/i, '')
+      .replace(/^Long ride[\s\S]+?Z2\.\s*/i, '')
+      .replace(/^~?[\d.]+[–-]?[\d.]*\s*km[^.]*\.\s*/i, '')
+      .trim() || detail;
+    return { time, distance, plan };
+  }
+
+  // ── Brick — total time ──
+  if (type === 'brick') {
+    // Ride time: "1h30m", "1h50m", "2hrs", "2h", "3h30m"
+    const rideHM  = detail.match(/[Rr]ide\s+([\d]+h(?:[\d]+m?|rs?))/i)
+                 || detail.match(/([\d]+h(?:[\d]+m?|rs?))/i);
+    const rideMinsM = detail.match(/[Rr]ide\s+(\d+)\s*min/i);
+    // Ride distance
+    const rideKmM = detail.match(/~([\d.]+)\s*km/);
+    // Run time: after "run" keyword
+    const runTimeM = detail.match(/\+?\s*(?:immediately\s+)?run\s+(\d+)\s*min/i);
+    // Run distance
+    const runKmM  = detail.match(/run\s+([\d.]+)\s*km/i);
+
+    const rideT = rideHM ? toMins(rideHM[1]) : rideMinsM ? parseInt(rideMinsM[1]) : null;
+    const runT  = runTimeM ? parseInt(runTimeM[1]) : null;
+    const totalT = (rideT || 0) + (runT || 0);
+
+    const distParts = [];
+    if (rideKmM) distParts.push('Ride: ~' + rideKmM[1] + ' km');
+    if (runKmM)  distParts.push('Run: ' + runKmM[1] + ' km');
+    distance = distParts.length ? distParts.join(' + ') : '—';
+
+    if (totalT) {
+      const parts = [];
+      if (rideT) parts.push('Ride: ' + fmtMins(rideT));
+      if (runT)  parts.push('Run: ' + runT + ' min');
+      time = fmtMins(totalT) + '  (' + parts.join(' + ') + ')';
+    } else {
+      time = '—';
+    }
+
+    plan = detail.replace(/^BRICK(?:\s+RACE\s+REHEARSAL)?(?:\s+RACE\s+SIMULATION)?:\s*/i, '').trim();
+    return { time, distance, plan };
+  }
+
+  // ── Gym ──
+  if (type === 'gym_legs' || type === 'gym_upper') {
+    time = '45–60 min';
+    distance = '—';
+    const parts = detail.split(/\s+—\s+/);
+    const phase = parts[0] || '';
+    const exercises = parts.slice(1).join(' · ') || '';
+    plan = phase + (exercises ? '\nExercises: ' + exercises : '');
+    return { time, distance, plan: plan.trim() };
+  }
+
+  if (type === 'rest') { return { time: '—', distance: '—', plan: detail }; }
+  if (type === 'race') { return { time: 'All day', distance: '113 km total', plan: detail }; }
+
+  return { time: '—', distance: '—', plan: detail };
+}
+
+
+
+function renderSessionDetail(type, detail) {
+  if (type === 'rest') {
+    return '<div class="session-detail">' + escapeHtml(detail) + '</div>';
+  }
+  if (type === 'race') {
+    return '<div class="session-detail" style="white-space:pre-line">' + escapeHtml(detail) + '</div>';
+  }
+  const p = parseSession(type, detail);
+  return '<div class="session-fields">'
+    + '<div class="session-field"><span class="field-label">Time</span><span class="field-val">' + escapeHtml(p.time) + '</span></div>'
+    + '<div class="session-field"><span class="field-label">Dist</span><span class="field-val">' + escapeHtml(p.distance) + '</span></div>'
+    + '</div>'
+    + '<div class="session-plan">' + escapeHtml(p.plan) + '</div>';
+}
+
+// ── Render helpers ────────────────────────────────────────────────────────────
+
+function totalSessions() {
+  let total = 0;
+  WEEKS_DATA.forEach(wk => DAY_ORDER.forEach(day => {
+    (wk.days[day] || []).forEach(s => { if (s.type !== 'rest') total++; });
+  }));
+  return total;
+}
+
+function completedCount() {
+  return Object.values(state.completed).filter(Boolean).length;
+}
+
+function sessionKey(weekNum, day, idx) {
+  return `${weekNum}_${day}_${idx}`;
+}
+
+function isCompleted(weekNum, day, idx) {
+  return !!state.completed[sessionKey(weekNum, day, idx)];
+}
+
+function toggleComplete(weekNum, day, idx) {
+  const key = sessionKey(weekNum, day, idx);
+  state.completed[key] = !state.completed[key];
+  saveState(state);
+  render();
+}
+
+function weekCompletionLabel(wk) {
+  const sessions = [];
+  DAY_ORDER.forEach(day => {
+    (wk.days[day] || []).forEach((s, idx) => {
+      if (s.type !== 'rest') sessions.push({ day, idx });
+    });
+  });
+  const done = sessions.filter(({ day, idx }) => isCompleted(wk.week, day, idx)).length;
+  if (done === 0) return null;
+  if (done === sessions.length) return '✓ Done';
+  return `${done}/${sessions.length}`;
+}
+
+// ── Drag and drop state ───────────────────────────────────────────────────────
+let drag = null; // { weekNum, day, idx, el, ghost }
+
+function startDrag(e, weekNum, day, idx, sessionEl) {
+  // Only drag from the dedicated handle
+  const target = e.target || e.srcElement;
+  if (!target.closest('.drag-handle')) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  ensureSchedule();
+
+  const rect = sessionEl.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const offsetX = clientX - rect.left;
+  const offsetY = clientY - rect.top;
+
+  // Create ghost
+  const ghost = sessionEl.cloneNode(true);
+  ghost.className = 'session-card drag-ghost';
+  ghost.style.width = rect.width + 'px';
+  ghost.style.left = (clientX - offsetX) + 'px';
+  ghost.style.top  = (clientY - offsetY) + 'px';
+  document.body.appendChild(ghost);
+
+  sessionEl.classList.add('dragging');
+
+  drag = { weekNum, day, idx, el: sessionEl, ghost, offsetX, offsetY };
+
+  const move = (e2) => {
+    const cx = e2.touches ? e2.touches[0].clientX : e2.clientX;
+    const cy = e2.touches ? e2.touches[0].clientY : e2.clientY;
+    ghost.style.left = (cx - offsetX) + 'px';
+    ghost.style.top  = (cy - offsetY) + 'px';
+
+    // Find drop target
+    ghost.style.display = 'none';
+    const el = document.elementFromPoint(cx, cy);
+    ghost.style.display = '';
+
+    // Clear previous highlights
+    document.querySelectorAll('.drag-over-day, .drag-over-session').forEach(el => {
+      el.classList.remove('drag-over-day', 'drag-over-session');
+    });
+    if (el) {
+      const dayRow = el.closest('.day-row');
+      if (dayRow) dayRow.classList.add('drag-over-day');
+      const sessionCard = el.closest('.session-card:not(.dragging)');
+      if (sessionCard) sessionCard.classList.add('drag-over-session');
+    }
+  };
+
+  const end = (e2) => {
+    const cx = e2.changedTouches ? e2.changedTouches[0].clientX : e2.clientX;
+    const cy = e2.changedTouches ? e2.changedTouches[0].clientY : e2.clientY;
+
+    ghost.remove();
+    if (drag && drag.el) drag.el.classList.remove('dragging');
+    document.querySelectorAll('.drag-over-day, .drag-over-session').forEach(el => {
+      el.classList.remove('drag-over-day', 'drag-over-session');
+    });
+
+    // Find drop target
+    const targetEl = document.elementFromPoint(cx, cy);
+    if (targetEl && drag) {
+      const targetDayRow = targetEl.closest('.day-row');
+      const targetWeekCard = targetEl.closest('.week-card');
+      if (targetDayRow && targetWeekCard) {
+        const targetDay = targetDayRow.dataset.day;
+        const targetWeek = parseInt(targetWeekCard.dataset.week);
+        const targetSessionCard = targetEl.closest('.session-card:not(.dragging)');
+        const targetIdx = targetSessionCard ? parseInt(targetSessionCard.dataset.idx) : null;
+
+        if (targetDay && targetWeek) {
+          moveSession(drag.weekNum, drag.day, drag.idx, targetWeek, targetDay, targetIdx);
+        }
+      }
+    }
+
+    drag = null;
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('mouseup', end);
+    document.removeEventListener('touchmove', move, { passive: false });
+    document.removeEventListener('touchend', end);
+  };
+
+  document.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', end);
+  document.addEventListener('touchmove', move, { passive: false });
+  document.addEventListener('touchend', end);
+}
+
+function moveSession(fromWeek, fromDay, fromIdx, toWeek, toDay, toIdx) {
+  ensureSchedule();
+  const weeks = state.schedule;
+
+  const fromWk = weeks.find(w => w.week === fromWeek);
+  const toWk   = weeks.find(w => w.week === toWeek);
+  if (!fromWk || !toWk) return;
+
+  fromWk.days[fromDay] = fromWk.days[fromDay] || [];
+  toWk.days[toDay]     = toWk.days[toDay]     || [];
+
+  // Remove from source
+  const [session] = fromWk.days[fromDay].splice(fromIdx, 1);
+
+  // Insert at target position
+  if (toIdx !== null && toIdx !== undefined) {
+    toWk.days[toDay].splice(toIdx, 0, session);
+  } else {
+    toWk.days[toDay].push(session);
+  }
+
+  // Update completion keys — remap old key to position-less approach
+  // (we just clear keys for affected days to avoid stale ticks)
+  Object.keys(state.completed).forEach(key => {
+    const [w, d] = key.split('_');
+    if ((parseInt(w) === fromWeek && d === fromDay) ||
+        (parseInt(w) === toWeek   && d === toDay)) {
+      delete state.completed[key];
+    }
+  });
+
+  saveState(state);
+  render();
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────────────
+
+function renderPlan() {
+  const weeks = getWeeks().filter(w => w.phase === activePhase);
+  const phase = PHASES.find(p => p.id === activePhase);
+  const color = phase ? phase.color : '#fff';
+
+  let html = `<div class="weeks-container">`;
+
+  weeks.forEach(wk => {
+    const isOpen = !!state.openWeeks[wk.week];
+    const isRecovery = wk.note && (wk.note.includes('RECOVERY') || wk.note.includes('Recovery') || wk.note.includes('TAPER') || wk.note.includes('RACE WEEK'));
+    const compLabel = weekCompletionLabel(wk);
+
+    html += `
+    <div class="week-card ${isOpen ? 'open' : ''}" data-week="${wk.week}" style="--phase-color:${color}">
+      <div class="week-header" onclick="toggleWeek(${wk.week})">
+        <div class="week-num ${isRecovery ? 'recovery' : ''}" style="${isRecovery ? '' : `--phase-color:${color}`}">${wk.week}</div>
+        <div class="week-info">
+          <div class="week-title">Week ${wk.week}${isRecovery ? ' <span style="font-size:10px;color:var(--text3);font-weight:400">Recovery</span>' : ''}</div>
+          <div class="week-note">${wk.note || wk.dates || ''}</div>
+        </div>
+        <div class="week-right">
+          ${compLabel ? `<span class="week-progress">${compLabel}</span>` : ''}
+          <span class="week-hours">${wk.hours}</span>
+          <span class="week-chevron">▼</span>
+        </div>
+      </div>
+      <div class="days-container">`;
+
+    DAY_ORDER.forEach(day => {
+      const sessions = (wk.days[day] || []);
+      html += `
+        <div class="day-row" data-day="${day}">
+          <div class="day-label">
+            <span class="day-name">${day}</span>
+            <span class="day-drag-hint">hold to drag</span>
+          </div>
+          <div class="sessions-list">`;
+
+      sessions.forEach((session, idx) => {
+        const stype = ST[session.type] || ST.rest;
+        const done = isCompleted(wk.week, day, idx);
+        const isRest = session.type === 'rest';
+
+        html += `
+            <div class="session-card ${done ? 'done' : ''}"
+                 data-idx="${idx}"
+                 style="--session-color:${isRest ? 'var(--border)' : stype.color};flex-direction:column;padding:0"
+                 onmousedown="event.stopPropagation()"
+                 ontouchstart="event.stopPropagation()">
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 10px;padding-left:28px">
+                <span class="session-icon">${stype.icon}</span>
+                <div class="session-body">
+                  <div class="session-label">${stype.label}</div>
+                  ${renderSessionDetail(session.type, session.detail)}
+                </div>
+                <button class="tick-btn" onclick="event.stopPropagation();toggleComplete(${wk.week},'${day}',${idx})" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="Mark complete">
+                  ${done ? '✓' : ''}
+                </button>
+              </div>
+              ${makeDragHandle(wk.week, day, idx)}
+              ${isRest ? '' : buildLogSection(wk.week, day, idx, session.type)}
+            </div>`;
+      });
+
+      html += `
+          </div>
+        </div>`;
+    });
+
+    html += `
+      </div>
+    </div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+function renderZones() {
+  let html = `<div class="panel-section">
+    <div class="panel-title">Training Zones — Calibrated from Lake Macquarie Tri</div>`;
+
+  Object.entries(ZONES).forEach(([key, z]) => {
+    html += `
+    <div class="zone-card" style="--zone-color:${z.color}">
+      <div class="zone-name">${key} — ${z.label}</div>
+      <div class="zone-metrics">
+        <div class="zone-metric"><span>HR</span> ${z.hr}</div>
+        <div class="zone-metric"><span>Run</span> ${z.runPace}</div>
+        <div class="zone-metric"><span>Swim</span> ${z.swimPace}</div>
+        <div class="zone-metric"><span>Bike</span> ${z.bikePace}</div>
+      </div>
+      <div class="zone-desc">${z.desc}</div>
+    </div>`;
+  });
+
+  html += `</div>`;
+
+  // Long run chart
+  const lrData = [];
+  WEEKS_DATA.forEach(wk => {
+    const sun = (wk.days.Sun || []);
+    const lr = sun.find(s => s.type === 'run_long' || s.type === 'race' || s.type === 'run_easy');
+    if (lr) {
+      // Use minutes to avoid false km refs (e.g. "100km bike yesterday" in detail text)
+      const mRange = lr.detail.match(/~(\d+)[\u2013\-](\d+)\s*min/);
+      const mMins  = lr.detail.match(/(\d+)\s*min/);
+      const mins = lr.type === 'race' ? 320
+                 : mRange ? Math.round((parseInt(mRange[1]) + parseInt(mRange[2])) / 2)
+                 : mMins  ? parseInt(mMins[1])
+                 : null;
+      if (mins) lrData.push({ week: wk.week, km: mins, phase: wk.phase });
+    }
+  });
+  const maxKm = Math.max(...lrData.map(d => d.km));
+  const phaseColors = { base: '#4ade80', build1: '#fbbf24', build2: '#f97316', peak: '#c084fc' };
+
+  html += `<div class="panel-section">
+    <div class="panel-title">Long Run Progression</div>
+    <div class="chart-wrap">
+      <div class="chart-bars">`;
+  lrData.forEach(d => {
+    const h = Math.round((d.km / (maxKm + 1)) * 100);
+    const c = d.week === 23 ? '#fbbf24' : (phaseColors[d.phase] || '#fff');
+    html += `<div class="chart-bar" title="Wk ${d.week}: ${d.km}km" style="height:${h}%;background:${c}88"></div>`;
+  });
+  html += `</div>
+      <div class="chart-labels">`;
+  lrData.forEach(d => {
+    const lbl = d.week === 23 ? '🏁' : (d.week % 4 === 0 ? d.week : '');
+    html += `<div class="chart-lbl">${lbl}</div>`;
+  });
+  html += `</div></div></div>`;
+
+  return html;
+}
+
+function renderTargets() {
+  const targets = [
+    { leg: "🏊 Swim",  dist: "1.9 km",  current: "2:14/100m",    target: "2:00–2:05/100m", time: "38–40 min",  color: "#0ea5e9", note: "Close now. Intervals bridge the gap." },
+    { leg: "🚴 Bike",  dist: "90 km",   current: "30 km/h",       target: "32–34 km/h",     time: "2h39–2h49",  color: "#8b5cf6", note: "Biggest gap. Priority of the plan." },
+    { leg: "🏃 Run",   dist: "21.1 km", current: "5:19/km (tri)", target: "5:45–5:55/km",   time: "2h01–2h05",  color: "#10b981", note: "Off 90km bike. Smart pacing wins." },
+    { leg: "⏱ T1+T2", dist: "—",        current: "—",             target: "~5 min",          time: "~5 min",     color: "#64748b", note: "Practice in brick sessions." },
+  ];
+
+  let html = `<div class="panel-section">
+    <div class="panel-title">Race Day Targets — Port Macquarie 70.3</div>
+    <div class="target-grid">`;
+
+  targets.forEach(t => {
+    html += `
+    <div class="target-card" style="border-top: 3px solid ${t.color}">
+      <div class="target-leg" style="color:${t.color}">${t.leg} · ${t.dist}</div>
+      <div class="target-val" style="color:${t.color}">${t.target}</div>
+      <div class="target-time">${t.time}</div>
+      <div class="target-note">${t.note}</div>
+    </div>`;
+  });
+
+  html += `</div>
+    <div class="target-total">
+      <div class="target-total-label">Total Target</div>
+      <div class="target-total-val">5:20–5:35</div>
+      <div class="target-total-sub">Conservative 5:35 · Realistic 5:25 · Stretch sub-5:15</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">Average age-group 70.3 finish ~5:51. A 5:20–5:35 is still a strong result — well inside the average.</div>
+    </div>
+  </div>`;
+
+  // Progress summary
+  const done = completedCount();
+  const total = totalSessions();
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+
+  html += `<div class="panel-section">
+    <div class="panel-title">Training Progress</div>
+    <div class="target-card" style="text-align:center">
+      <div class="target-val" style="color:var(--accent);font-size:36px;font-weight:200">${done}<span style="font-size:18px;color:var(--text3)"> / ${total}</span></div>
+      <div class="target-leg">sessions completed</div>
+      <div class="progress-bar-wrap" style="margin-top:12px;height:6px;border-radius:3px">
+        <div class="progress-bar" style="width:${pct}%;height:6px;border-radius:3px"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">${pct}% of plan complete</div>
+    </div>
+    <button class="reset-btn" onclick="confirmReset()">⚠ Reset all progress & schedule</button>
+  </div>`;
+
+  return html;
+}
+
+function render() {
+  const phase = PHASES.find(p => p.id === activePhase);
+  const color = phase ? phase.color : '#fff';
+  const done = completedCount();
+  const total = totalSessions();
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+
+  // Phase nav
+  const phaseNav = PHASES.map(p => `
+    <button class="phase-btn ${p.id === activePhase ? 'active' : ''}"
+            style="--phase-color:${p.color}"
+            onclick="setPhase('${p.id}')">${p.name}</button>
+  `).join('');
+
+  // Tab content
+  let tabContent = '';
+  if (activeTab === 'plan') {
+    tabContent = renderPlan();
+  } else if (activeTab === 'zones') {
+    tabContent = `<div class="panel active">${renderZones()}</div>`;
+  } else if (activeTab === 'targets') {
+    tabContent = `<div class="panel active">${renderTargets()}</div>`;
+  }
+
+  // Phase nav only shown in plan tab
+  const showPhaseNav = activeTab === 'plan';
+
+  document.getElementById('app').innerHTML = `
+    <div class="header">
+      <div class="header-row">
+        <div>
+          <div class="header-title">Port Mac 70.3 — Alt Plan</div>
+          <div class="header-sub">Jake Morrison · 18 October 2026 · 22 Weeks · Research-based</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--text3)">${done}/${total} done</div>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" style="width:${pct}%"></div>
+      </div>
+    </div>
+
+    ${showPhaseNav ? `<div class="phase-nav">${phaseNav}</div>` : ''}
+
+    ${tabContent}
+
+    <nav class="tab-bar">
+      <button class="tab-btn ${activeTab === 'plan' ? 'active' : ''}" onclick="setTab('plan')">
+        <span class="tab-icon">📅</span>Plan
+      </button>
+      <button class="tab-btn ${activeTab === 'zones' ? 'active' : ''}" onclick="setTab('zones')">
+        <span class="tab-icon">⚡</span>Zones
+      </button>
+      <button class="tab-btn ${activeTab === 'targets' ? 'active' : ''}" onclick="setTab('targets')">
+        <span class="tab-icon">🎯</span>Targets
+      </button>
+    </nav>
+  `;
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+function setPhase(id) { activePhase = id; render(); }
+function setTab(id) { activeTab = id; render(); }
+
+function toggleWeek(weekNum) {
+  state.openWeeks[weekNum] = !state.openWeeks[weekNum];
+  saveState(state);
+  render();
+}
+
+function confirmReset() {
+  if (confirm('Reset all completed sessions and custom schedule changes? This cannot be undone.')) {
+    state = { completed: {}, schedule: null, openWeeks: {} };
+    saveState(state);
+    render();
+  }
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+// WEEKS_DATA is injected below
+</script>
+
+<!-- WEEKS DATA injected here -->
+<script>// Alternate plan — research-based (MyProCoach / Purple Patch / Friel / 80-20)
+const WEEKS_DATA = [
+  {
+    week: 1, phase: "base", dates: "11–17 May", hours: "7.5h",
+    note: "Week 1: Two swims per week (pool Tue + open water Fri). Long run capped at 90 min (coach consensus for 70.3). Polarised intensity — Z2 or Z4, avoid Z3 grey zone.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 1,200m. WU: 200m easy. Main: 8×75m Z4 (1:50–2:05/100m, 20 sec rest). CD: 300m easy. Short reps build speed without overdoing volume in Week 1." },
+        { type: "bike_gym", detail: "Gym bike 45 min Z2 (HR 130–148, ~28–34 km/h). Cadence 85–95 rpm. Pure aerobic — no harder." },
+      ],
+      Wed: [
+        { type: "run_intervals", detail: "40 min. WU: 10 min Z1. Main: 4×3 min Z4 (4:55–5:20/km, HR 160–172) with 3 min Z1 jog. CD: 10 min Z1. Polarised from day one — hard is hard, easy is easy. Rest of week is Z2." },
+        { type: "gym_legs", detail: "Gym Legs — Adapt: 1×12–15, light  —  Squats · Leg Press · Leg Curl · Lunges · Calf Raises" },
+      ],
+      Thu: [
+        { type: "run_easy", detail: "35 min. Easy Z1–Z2 (6:00–7:00/km). Last 5 min: 5×20 sec Z5 (near-sprint, full 90 sec walk recovery). Strides sharpen neuromuscular speed without adding fatigue." },
+        { type: "gym_upper", detail: "Gym Upper — Adapt: 1×12–15, light  —  Lat Pulldowns · Bench Press · Pullover · Lat Raise · Curls · Triceps" },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 30 min, ~1,400m Z2. Sight every 8 strokes. You're already comfortable at this distance — use it to build OW confidence." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Long ride 1h45m, all Z2 (HR 130–148). ~48–54 km. Conversational pace — protect the aerobic base." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 90 min, Z2 (HR 130–148, 6:00–6:45/km). ~13–14 km. Coach consensus: 90 min is optimal longest run for 70.3 — injury risk rises sharply above this. Don't chase distance." },
+      ],
+    }
+  },
+  {
+    week: 2, phase: "base", dates: "18–24 May", hours: "8h",
+    note: "Week 2: Swim volume builds. Bike adds short Z4 openers. 90 min long run holds.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 1,350m. WU: 200m. Main: 6×100m Z4 (1:50–2:00/100m, 20 sec rest). CD: 350m easy. Building from last week — another 150m total." },
+        { type: "bike_gym", detail: "Gym bike 50 min. Include 4×2 min at 100+ rpm cadence (Z2 power) with 2 min normal. Rest Z2. Neuromuscular efficiency." },
+      ],
+      Wed: [
+        { type: "run_intervals", detail: "45 min. WU: 10 min Z1. Main: 5×3 min Z4 (4:55–5:20/km) with 3 min Z1 jog. CD: 10 min Z1. One more rep than Wk 1. Z4 should feel comfortably hard — not all-out." },
+        { type: "gym_legs", detail: "Gym Legs — Adapt: 1×12–15, light  —  Squats · Leg Press · Leg Curl · Lunges · Calf Raises" },
+      ],
+      Thu: [
+        { type: "run_easy", detail: "35 min. Easy Z1–Z2 (6:00–7:00/km). Last 5 min: 6×20 sec Z5 with 90 sec walk recovery. Build on Wk 1 strides." },
+        { type: "gym_upper", detail: "Gym Upper — Adapt: 1×12–15, light  —  Lat Pulldowns · Bench Press · Pullover · Lat Raise · Curls · Triceps" },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 35 min, ~1,600m Z2. Include 3×3 min pushing to Z3 effort (2:05–2:10/100m), 1 min easy between." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Long ride 2hrs, Z2 (HR 130–148). ~54–62 km. Include 3×5 min at Z4 (HR 160–172) in the middle, 3 min Z2 recovery. First quality bike efforts — controlled." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 90 min, Z2 (6:00–6:45/km). ~13–14 km. Fuel if running > 75 min." },
+      ],
+    }
+  },
+  {
+    week: 3, phase: "base", dates: "25–31 May", hours: "8.5h",
+    note: "Week 3: First brick. Swim volume 5,200m total. Still capping long run at 90 min.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 1,500m. WU: 300m. Main: 8×100m Z4 (1:50–2:00/100m, 15 sec rest). CD: 400m. Benchmark set: record avg 100m time — target sub-2:00 by Wk 12." },
+        { type: "bike_gym", detail: "Gym bike 55 min. Include 5×2 min at low Z4 (HR 155–165) with 3 min Z2. Race-specific effort in short doses." },
+      ],
+      Wed: [
+        { type: "run_intervals", detail: "48 min. WU: 10 min Z1. Main: 4×4 min Z4 (4:55–5:20/km, HR 160–172) with 3 min Z1 jog. CD: 10 min Z1. Longer reps now — 4 min Z4 is the sweet spot for threshold development." },
+        { type: "gym_legs", detail: "Gym Legs — Adapt: 1×12–15, light  —  Squats · Leg Press · Leg Curl · Lunges · Calf Raises" },
+      ],
+      Thu: [
+        { type: "run_easy", detail: "35 min. Easy Z1–Z2. Last 5 min: 6×20 sec Z5 with full 90 sec walk recovery. Three weeks of strides — legs should feel snappy." },
+        { type: "gym_upper", detail: "Gym Upper — Adapt: 1×12–15, light  —  Lat Pulldowns · Bench Press · Pullover · Lat Raise · Curls · Triceps" },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 35 min, ~1,600m. Sustained Z2 (2:20–2:30/100m). Practice race-start: sprint 30 sec, then settle." },
+      ],
+      Sat: [
+        { type: "brick", detail: "BRICK: Ride 2hrs Z2 (~54 km) with 4×5 min Z4 efforts, then immediately run 20 min Z2. Focus on settling into run rhythm fast." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 90 min, Z2 (6:00–6:45/km). ~13–14 km. Consistent — don't chase time or distance." },
+      ],
+    }
+  },
+  {
+    week: 4, phase: "base", dates: "1–7 Jun", hours: "5h",
+    note: "RECOVERY — volume –40%. Every 3rd week is recovery (MyProCoach 1:3 ratio). Swim stays 3 sessions but shorter.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_easy", detail: "Pool 800m easy. All Z1–Z2. No structure. Short recovery swim." },
+        { type: "bike_gym", detail: "Gym bike 30 min easy Z1–Z2. No structure. Spin legs out." },
+      ],
+      Wed: [
+        { type: "run_easy", detail: "30 min easy Z1–Z2. Recovery week — no quality. Legs fresh." },
+        { type: "gym_legs", detail: "Gym Legs — Adapt: 1×12 reps, light (–20% load). Recovery effort." },
+      ],
+      Thu: [
+        { type: "run_easy", detail: "25 min easy Z1. Very easy. Legs happy." },
+        { type: "gym_upper", detail: "Gym Upper — Adapt: 1×12 reps, light (–20% load)." },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 20 min, ~900m easy Z1–Z2. Enjoyable only." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Easy ride 1hr Z1–Z2. ~28–35 km. No targets." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Easy run 60 min, Z2. ~9 km. Deliberately shorter. Body absorbs the prior 3 weeks of load." },
+      ],
+    }
+  },
+  {
+    week: 5, phase: "base", dates: "8–14 Jun", hours: "8.5h",
+    note: "Week 5: Gym enters Endurance phase. Swim building toward 5,500m/week. Bike quality increasing.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 1,700m. WU: 300m. Main: 7×100m Z4 (1:48–1:58/100m, 20 sec rest). CD: 600m. Back to quality work — Z4 pace should feel strong after recovery week." },
+        { type: "bike_gym", detail: "Gym bike 55 min. Include 4×4 min Z4 (HR 160–172) with 3 min Z2 recovery. Getting race-specific." },
+      ],
+      Wed: [
+        { type: "run_intervals", detail: "50 min. WU: 10 min Z1. Main: 5×4 min Z4 (4:55–5:20/km) with 3 min Z1 jog. CD: 10 min Z1. Back after recovery — Z4 should feel better than it did in Wk 3." },
+        { type: "gym_legs", detail: "Gym Legs — Endur: 2×12–15, 90s rest  —  Squats · Leg Press · Leg Curl · Lunges · Calf Raises" },
+      ],
+      Thu: [
+        { type: "run_intervals", detail: "45 min. WU: 10 min Z1. Main: 6×1 min Z5 (near all-out, full 2 min Z1 jog recovery). CD: 11 min Z1. Z5 minute reps — the hard end of the polarised model. Should feel genuinely hard." },
+        { type: "gym_upper", detail: "Gym Upper — Endur: 2×12–15, 90s rest  —  Lat Pulldowns · Bench Press · Pullover · Lat Raise · Curls · Triceps" },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 40 min, ~1,800m. Mix Z2 with 4×2 min Z4 efforts (1:55–2:05/100m), 1 min easy between." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Long ride 2h15m, mostly Z2 (~62–68 km). Include 3×8 min Z4 (HR 160–172) with 4 min Z2 recovery." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 90 min, Z2 (6:00–6:45/km). Consistent — don't go longer. Frequency and consistency beat occasional big runs." },
+      ],
+    }
+  },
+  {
+    week: 6, phase: "base", dates: "15–21 Jun", hours: "9h",
+    note: "Week 6: Peak base week. Swim 5,600m. Bike approaching 70 km long ride.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 1,900m. WU: 300m. Main: 4×200m Z4 (1:48–1:58/100m, 25 sec rest). CD: 500m. 200m reps at race pace — 1,900m total mirrors race swim distance." },
+        { type: "bike_gym", detail: "Gym bike 60 min. Include 5×5 min Z4 (HR 160–172) with 3 min Z2. Building race-pace bike endurance." },
+      ],
+      Wed: [
+        { type: "run_intervals", detail: "55 min. WU: 10 min Z1. Main: 6×4 min Z4 (4:55–5:20/km) with 3 min Z1 jog. CD: 7 min Z1. Six reps — significant Z4 volume. This session is building your race run fitness." },
+        { type: "gym_legs", detail: "Gym Legs — Endur: 2×12–15, 90s rest  —  Squats · Leg Press · Leg Curl · Lunges · Calf Raises" },
+      ],
+      Thu: [
+        { type: "run_intervals", detail: "45 min. WU: 10 min Z1. Main: 8×1 min Z5 with 2 min Z1 jog recovery. CD: 7 min Z1. More Z5 volume than Wk 5 — building top-end capacity." },
+        { type: "gym_upper", detail: "Gym Upper — Endur: 2×12–15, 90s rest  —  Lat Pulldowns · Bench Press · Pullover · Lat Raise · Curls · Triceps" },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 40 min, ~1,900m. Reach full race swim distance. Z2 throughout — no pressure. This is a milestone." },
+      ],
+      Sat: [
+        { type: "brick", detail: "BRICK: Ride 2h30m (~68–75 km) with 4×8 min Z4 efforts, then run 25 min Z2. Settle into run in under 3 min." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 90 min, Z2 (6:00–6:45/km). Same distance as Wk 1 — but fitness gains are happening. Don't mistake consistency for stagnation." },
+      ],
+    }
+  },
+  {
+    week: 7, phase: "build1", dates: "22–28 Jun", hours: "9.5h",
+    note: "BUILD I: Z4/Z5 intervals sharpen. Two swims/week (pool Tue + open water Fri). Bike volume climbing. Long run stays 90 min.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 2,100m. WU: 300m. Main: 3×300m Z4 (1:48–1:58/100m, 25 sec rest) + 3×100m Z5 (all-out, 20 sec rest). CD: 600m. Mix of sustained Z4 and sharp Z5 — covers all race-pace zones." },
+        { type: "bike_intervals", detail: "65 min. WU: 15 min Z2. Main: 5×5 min Z4 (HR 160–172) with 3 min Z2. CD: 10 min. Polarised — easy base, then genuine threshold." },
+      ],
+      Wed: [
+        { type: "run_intervals", detail: "55 min. WU: 10 min Z1. Main: 3×8 min Z4 (4:55–5:20/km) with 3 min Z1 jog. CD: 10 min Z1. Moving to longer reps. 3×8 min at Z4 is meaningful threshold stimulus." },
+        { type: "gym_legs", detail: "Gym Legs — Endur: 2×12–15, 90s rest  —  Squats · Leg Press · Leg Curl · Lunges · Calf Raises" },
+      ],
+      Thu: [
+        { type: "run_intervals", detail: "50 min. WU: 10 min Z1. Main: 3×5 min Z4 (4:55–5:20/km, HR 160–172) with 3 min Z1 jog. CD: 10 min Z1. First proper Z4 run intervals." },
+        { type: "gym_upper", detail: "Gym Upper — Endur: 2×12–15, 90s rest  —  Lat Pulldowns · Bench Press · Pullover · Lat Raise · Curls · Triceps" },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 45 min, ~2,000m. Swim beyond race distance at Z2. Confidence building." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Long ride 2h45m (~75–85 km). Z2 base with 4×8 min Z4 efforts in the middle. Fuelling: 200–250 cal/hr from Wk 7 onward." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 90 min, Z2. Consistent. After bike yesterday, HR may be higher — hold pace, not HR." },
+      ],
+    }
+  },
+  {
+    week: 8, phase: "build1", dates: "29 Jun – 5 Jul", hours: "8h",
+    note: "RECOVERY — 3-week recovery cycle. Swim still 3 sessions but all easy.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_easy", detail: "Pool 1,000m easy Z2. No structure." },
+        { type: "bike_gym", detail: "Gym bike 35 min easy Z1–Z2." },
+      ],
+      Wed: [
+        { type: "gym_legs", detail: "Gym Legs — Endur: 2×12 reps, slightly reduced load." },
+      ],
+      Thu: [
+        { type: "run_easy", detail: "30 min easy Z1. Very easy." },
+        { type: "gym_upper", detail: "Gym Upper — Endur: 2×12 reps, slightly reduced load." },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 25 min, ~1,100m easy Z1–Z2." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Easy ride 1h30m Z2. ~40–48 km. No efforts." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Easy run 60 min Z2. ~9–10 km. Intentional step back." },
+      ],
+    }
+  },
+  {
+    week: 9, phase: "build1", dates: "6–12 Jul", hours: "10h",
+    note: "Week 9: Gym enters Strength phase. Swim 6,000m/week. Bike long ride building toward 90 km.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 2,300m. WU: 400m. Main: 4×300m Z4 (1:48–1:58/100m, 25 sec rest) + 3×100m Z5. CD: 500m. First 3-swim week — quality over volume." },
+        { type: "bike_intervals", detail: "70 min. WU: 15 min. Main: 4×8 min Z4 (HR 160–172) with 3 min Z2. CD: 15 min. Sustained threshold efforts on the bike." },
+      ],
+      Wed: [
+        { type: "swim_easy", detail: "Pool 2,800m. WU: 400m. Main: 2×1,000m Z2 (2:10–2:20/100m, 30 sec) + 4×100m Z2 drills. CD: 400m." },
+        { type: "gym_legs", detail: "Gym Legs — Strength: 3 sets 10/8/6, 90s  —  Squats · Leg Press · Leg Curl · Lunges · Calf Raises" },
+      ],
+      Thu: [
+        { type: "run_intervals", detail: "55 min. WU: 10 min. Main: 4×5 min Z4 (4:55–5:20/km) with 3 min Z1 jog. CD: 10 min Z1. Building sustained Z4 run capacity." },
+        { type: "gym_upper", detail: "Gym Upper — Strength: 3 sets 10/8/6, 90s  —  Lat Pulldowns · Bench Press · Pullover · Lat Raise · Curls · Triceps" },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 45 min, ~2,100m. Include 5×3 min Z4 efforts (1:55–2:05/100m), 1 min easy between. Total OW distance beyond race distance." },
+      ],
+      Sat: [
+        { type: "brick", detail: "BRICK: Ride 3hrs (~82–90 km) with 5×8 min Z4 efforts. Then immediately run 25 min Z2. Fuelling practice — exactly as race day." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 90 min, Z2 (6:00–6:45/km). Consistent. Brick yesterday is the point — this run on tired legs is more specific than a long standalone run." },
+      ],
+    }
+  },
+  {
+    week: 10, phase: "build1", dates: "13–19 Jul", hours: "10.5h",
+    note: "Week 10: Peak Build I. Swim 6,500m. Bike long ride ~95–100 km. Long run stays 90 min.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 2,500m. WU: 500m. Main: 3×500m Z4 (1:48–1:58/100m, 35 sec rest). CD: 500m. BENCHMARK: record each 500m time — target 9:00–9:50 per rep." },
+        { type: "bike_intervals", detail: "75 min. WU: 15 min. Main: 3×10 min Z4 (HR 160–172) with 4 min Z2. CD: 16 min. Sustained 10-min Z4 efforts — this is race intensity." },
+      ],
+      Wed: [
+        { type: "swim_easy", detail: "Pool 3,000m. WU: 400m. Main: 3×700m Z2 (2:10–2:20/100m, 30 sec rest). CD: 200m + 500m cool technique. Endurance base swim." },
+        { type: "gym_legs", detail: "Gym Legs — Strength: 3 sets 10/8/6, 90s  —  Squats · Leg Press · Leg Curl · Lunges · Calf Raises" },
+      ],
+      Thu: [
+        { type: "run_intervals", detail: "60 min. WU: 10 min. Main: 5×5 min Z4 (4:55–5:20/km) with 3 min Z1 jog. CD: 10 min Z1. 5×5 at threshold — significant run quality session." },
+        { type: "gym_upper", detail: "Gym Upper — Strength: 3 sets 10/8/6, 90s  —  Lat Pulldowns · Bench Press · Pullover · Lat Raise · Curls · Triceps" },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 50 min, ~2,300m. Sustained effort — push to Z3 for middle 1,000m, then easy. Simulate the sustained effort of race day swim." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Long ride 3h30m (~95–105 km). Z2 with 4×10 min Z4 in middle. First time near race distance on the bike. Fuel as race day. This is a significant milestone." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 90 min, Z2. After 100km bike yesterday, this run is on pre-fatigued legs — exactly the stimulus you need for 70.3 run prep." },
+      ],
+    }
+  },
+  {
+    week: 11, phase: "build1", dates: "20–26 Jul", hours: "7h",
+    note: "RECOVERY — maintaining 3 sessions each discipline but all easy/short.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_easy", detail: "Pool 1,200m easy Z2. No pressure." },
+        { type: "bike_gym", detail: "Gym bike 35 min easy Z1–Z2." },
+      ],
+      Wed: [
+        { type: "gym_legs", detail: "Gym Legs — Strength: 2 sets only, moderate weight. Recovery." },
+      ],
+      Thu: [
+        { type: "run_easy", detail: "30 min easy Z1–Z2. Add 4×20 sec strides." },
+        { type: "gym_upper", detail: "Gym Upper — Strength: 2 sets only, moderate weight. Recovery." },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 25 min, ~1,100m easy." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Easy ride 1h30m Z2. ~40–48 km. Enjoy it." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Easy run 60 min Z2. ~9–10 km." },
+      ],
+    }
+  },
+  {
+    week: 12, phase: "build1", dates: "27 Jul – 2 Aug", hours: "10.5h",
+    note: "Week 12: Final Build I. Benchmark swim (Tue pool). Big brick. Long run 90 min. 8 weeks to race.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 2,700m. WU: 500m. Main: 8×200m Z4 (1:48–1:58/100m, 20 sec rest). CD: 600m. BENCHMARK: avg your 8×200m — target 3:36–3:56/rep. Compare with Wk 3." },
+        { type: "bike_intervals", detail: "80 min. WU: 15 min. Main: 4×10 min Z4 (HR 160–172) with 3 min Z2. CD: 17 min. Longest Z4 bike block yet." },
+      ],
+      Wed: [
+        { type: "gym_legs", detail: "Gym Legs — Strength: 3 sets 10/8/6, 90s  —  Squats · Leg Press · Leg Curl · Lunges · Calf Raises" },
+      ],
+      Thu: [
+        { type: "run_intervals", detail: "60 min. WU: 10 min. Main: 6×4 min Z4 (4:55–5:20/km) with 2.5 min Z1 jog. CD: 10 min Z1. Shorter reps, more of them — sharpening speed." },
+        { type: "gym_upper", detail: "Gym Upper — Strength: 3 sets 10/8/6, 90s  —  Lat Pulldowns · Bench Press · Pullover · Lat Raise · Curls · Triceps" },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 50 min, ~2,300m. Race-start practice: sprint 45 sec, settle to Z2. Swim confidently beyond race distance." },
+      ],
+      Sat: [
+        { type: "brick", detail: "BRICK: Ride 3h30m (~95–105 km) with 5×10 min Z4 efforts. Then run 30 min: first 10 min at target race pace (5:45–5:55/km), last 20 min Z2. Key session — note how legs feel at race pace." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 90 min, Z2. Body is adapting — the consistent 90 min runs are building exactly what you need without the injury risk of going longer." },
+      ],
+    }
+  },
+  {
+    week: 13, phase: "build2", dates: "3–9 Aug", hours: "11h",
+    note: "BUILD II: Race-specific. Two swims most weeks, THREE this week. Bike hitting full race distance. Run still 90 min max.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 2,900m. WU: 500m. Main: 3×600m Z4 (1:48–1:58/100m, 35 sec rest) + 4×100m Z5. CD: 600m. Sustained Z4 + sharp Z5 — comprehensive race-pace session." },
+        { type: "bike_intervals", detail: "80 min. WU: 15 min. Main: 3×12 min Z4 (HR 160–172) with 4 min Z2. CD: 17 min. Race-intensity 12-min blocks." },
+      ],
+      Wed: [
+        { type: "swim_easy", detail: "Pool 3,000m. WU: 400m. Main: 2×1,200m Z2 (2:08–2:18/100m, 30 sec rest). CD: 400m. Longest endurance pool session." },
+        { type: "gym_legs", detail: "Gym Legs — Strength: 3 sets 10/8/6, 90s  —  Squats · Leg Press · Leg Curl · Lunges · Calf Raises" },
+      ],
+      Thu: [
+        { type: "run_intervals", detail: "65 min. WU: 10 min. Main: 4×6 min Z4 (4:55–5:20/km) with 3 min Z1 jog. CD: 15 min Z1. Extending Z4 run duration." },
+        { type: "gym_upper", detail: "Gym Upper — Strength: 3 sets 10/8/6, 90s  —  Lat Pulldowns · Bench Press · Pullover · Lat Raise · Curls · Triceps" },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 50 min, ~2,400m. Strong Z2 effort sustained throughout. You are regularly swimming well beyond race distance now." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Long ride 3h45m (~100–110 km). Z2 with 5×10 min Z4. Full race distance covered plus extra. Fuel as race plan. This is your key training ride." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 90 min, Z2. After Saturday's big ride, this run is on pre-fatigued legs. That's the point." },
+      ],
+    }
+  },
+  {
+    week: 14, phase: "build2", dates: "10–16 Aug", hours: "9h",
+    note: "RECOVERY — 3-week cycle. Body consolidates weeks 12–13. Swim still 3 sessions, all easy.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_easy", detail: "Pool 1,400m easy Z2." },
+        { type: "bike_gym", detail: "Gym bike 40 min easy Z1–Z2." },
+      ],
+      Wed: [
+        { type: "gym_legs", detail: "Gym Legs — Strength: 2 sets only, moderate. Recovery." },
+      ],
+      Thu: [
+        { type: "run_easy", detail: "35 min easy Z1–Z2 + 4×20 sec strides." },
+        { type: "gym_upper", detail: "Gym Upper — Strength: 2 sets only, moderate. Recovery." },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 30 min, ~1,400m easy Z1–Z2." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Easy ride 2hrs Z2. ~54–62 km. No efforts. Enjoy it." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Easy run 70 min Z2. ~10–11 km. Legs should feel springy after the recovery week." },
+      ],
+    }
+  },
+  {
+    week: 15, phase: "build2", dates: "17–23 Aug", hours: "11.5h",
+    note: "Week 15: Peak Build II. Swim 7,000m. Bike 110 km. Race-pace run sessions. 8 weeks out.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 3,100m. WU: 600m. Main: 2×900m Z4 (1:48–1:58/100m, 50 sec rest) + 3×100m Z5 all-out. CD: 500m. 900m Z4 reps — each target ~16:12–17:42. Toughest pool session of the plan." },
+        { type: "bike_intervals", detail: "85 min. WU: 15 min. Main: 5×10 min Z4 (HR 160–172) with 3 min Z2. CD: 10 min. 5×10 min — most quality bike work of the plan." },
+      ],
+      Wed: [
+        { type: "swim_easy", detail: "Pool 3,000m. WU: 400m. Main: 1,900m continuous Z2 — FULL RACE SWIM DISTANCE non-stop. CD: 300m easy. If you can swim 1,900m non-stop at 2:10–2:20/100m, race day is under control." },
+        { type: "gym_legs", detail: "Gym Legs — Strength: 3 sets 10/8/6, 90s  —  Squats · Leg Press · Leg Curl · Lunges · Calf Raises" },
+      ],
+      Thu: [
+        { type: "run_intervals", detail: "65 min. WU: 10 min. Main: 5×6 min Z4 (4:55–5:20/km) with 3 min Z1 jog. CD: 10 min Z1. Longest Z4 run block of the plan." },
+        { type: "gym_upper", detail: "Gym Upper — Strength: 3 sets 10/8/6, 90s  —  Lat Pulldowns · Bench Press · Pullover · Lat Raise · Curls · Triceps" },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 55 min, ~2,500m. Sustained strong effort. This is more than race distance — builds confidence and buffer." },
+      ],
+      Sat: [
+        { type: "brick", detail: "BRICK RACE REHEARSAL: Ride 3h45m (~105–115 km), exact race fuel (200–250 cal/hr). Then immediately run 30 min: first 15 min at race pace 5:45–5:55/km, last 15 min Z2. This session reveals your real run pace off the bike." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 90 min, Z2. Legs tired from yesterday — that's the spec. Hold Z2 pace, not distance. This is peak training stress of the plan." },
+      ],
+    }
+  },
+  {
+    week: 16, phase: "build2", dates: "24–30 Aug", hours: "11h",
+    note: "Week 16: Maintain peak load but shift toward race-specific work. Gym enters Taper phase.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 3,000m. WU: 600m. Main: 4×600m Z4 (1:48–1:58/100m, 30 sec rest) + 4×100m Z5. CD: 400m." },
+        { type: "bike_intervals", detail: "80 min. WU: 15 min. Main: 4×12 min Z4 with 3 min Z2. CD: 13 min." },
+      ],
+      Wed: [
+        { type: "swim_easy", detail: "Pool 2,800m. WU: 400m. Main: 1,900m Z2 continuous again (non-stop race distance). CD: 100m. Second time swimming full race distance non-stop." },
+        { type: "gym_legs", detail: "Gym Legs — Taper: 2×12, 30s rest  —  Squats · Leg Press · Leg Curl · Lunges · Calf Raises" },
+      ],
+      Thu: [
+        { type: "run_intervals", detail: "60 min. WU: 10 min. Main: 4×6 min Z4 (4:55–5:20/km) with 3 min Z1. CD: 10 min Z1." },
+        { type: "gym_upper", detail: "Gym Upper — Taper: 2×12, 30s rest  —  Lat Pulldowns · Bench Press · Pullover · Lat Raise · Curls · Triceps" },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 50 min, ~2,300m. Race-start practice, then sustained Z2." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Long ride 3h30m (~95–105 km) with 4×10 min Z4. Last big long ride before taper." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 90 min, Z2. LAST 90-MIN RUN. Fitness is banked." },
+      ],
+    }
+  },
+  {
+    week: 17, phase: "build2", dates: "31 Aug – 6 Sep", hours: "9.5h",
+    note: "RECOVERY — 3-week cycle. Absorb peak training load. 6 weeks to race. Gym continues at taper level.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_easy", detail: "Pool 1,600m easy Z2. Relaxed." },
+        { type: "bike_gym", detail: "Gym bike 45 min easy Z1–Z2." },
+      ],
+      Wed: [
+        { type: "gym_legs", detail: "Gym Legs — Taper: 2×12, 30s rest. Moderate weight. Maintain without strain." },
+      ],
+      Thu: [
+        { type: "run_easy", detail: "35 min easy Z1–Z2 + 4×20 sec strides." },
+        { type: "gym_upper", detail: "Gym Upper — Taper: 2×12, 30s rest." },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 30 min, ~1,400m easy. Feel fresh." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Easy ride 2hrs Z2. ~54–62 km. Enjoy it." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Easy run 70 min Z2. Legs feel good after recovery week — trust the process." },
+      ],
+    }
+  },
+  {
+    week: 18, phase: "build2", dates: "7–13 Sep", hours: "11h",
+    note: "Week 18: Final race-specific block. 5 weeks to race. Race-pace everything. Last big training week.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 3,000m. WU: 600m. Main: 3×800m Z4 (target: holding your best pace from Wk 12 benchmark) + 4×100m Z5. CD: 400m." },
+        { type: "bike_intervals", detail: "80 min. WU: 15 min. Main: 4×12 min Z4 (HR 160–172) with 3 min Z2. CD: 17 min. Last significant Z4 bike block." },
+      ],
+      Wed: [
+        { type: "swim_easy", detail: "Pool 2,800m. WU: 400m. Main: 1,900m continuous Z2 — race swim again. CD: 100m. Three times you've swum 1,900m non-stop. Race swim is covered." },
+        { type: "gym_legs", detail: "Gym Legs — Taper: 2×12, 30s rest. LAST HEAVY LEGS SESSION." },
+      ],
+      Thu: [
+        { type: "run_intervals", detail: "60 min. WU: 10 min. Main: 5×5 min Z4 (4:55–5:20/km) with 3 min Z1 jog. CD: 10 min. Sharpening — not fatiguing." },
+        { type: "gym_upper", detail: "Gym Upper — Taper: 2×12, 30s rest. Last full upper session." },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 50 min, ~2,300m. Confident and strong. Target 2:05–2:10/100m sustained." },
+      ],
+      Sat: [
+        { type: "brick", detail: "BRICK: Ride 3hrs (~82–90 km) with 4×10 min Z4, exact race fuel plan. Then run 25 min at race pace (5:45–5:55/km). LAST BIG BRICK." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Long run 80 min Z2. Slightly shorter. LAST LONG RUN of the plan. Fitness banked. Taper begins next week." },
+      ],
+    }
+  },
+  {
+    week: 19, phase: "peak", dates: "14–20 Sep", hours: "9h",
+    note: "TAPER STARTS. Volume drops ~30%. Back to 2 swims/week. Intensity maintained — keep the sharpness. 4 weeks to race.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 2,400m. WU: 400m. Main: 5×400m Z4 (1:48–1:58/100m, 30 sec rest). CD: 500m. Maintain swim speed. Shorter than peak but quality stays." },
+        { type: "bike_intervals", detail: "65 min. WU: 15 min. Main: 4×8 min Z4 with 3 min Z2. CD: 10 min." },
+      ],
+      Wed: [
+        { type: "gym_legs", detail: "Gym Legs — Taper: 2×12, 30s rest, lighter. Maintain activation only." },
+      ],
+      Thu: [
+        { type: "run_intervals", detail: "50 min. WU: 10 min. Main: 4×5 min Z4 (4:55–5:20/km) with 3 min Z1. CD: 10 min. Maintained intensity, reduced volume." },
+        { type: "gym_upper", detail: "Gym Upper — Taper: 2×12, 30s rest, lighter." },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 40 min, ~1,800m Z2–Z3. Smooth and efficient." },
+      ],
+      Sat: [
+        { type: "brick", detail: "RACE SIMULATION: Ride 2h45m at race HR Z3 (~32–34 km/h), exact race fuel. Then run 30 min at race pace 5:45–5:55/km. Most important session of the taper — this locks in race-day pacing." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Run 70 min Z2. Volume dropping — that's the plan working. Legs should feel increasingly fresh." },
+      ],
+    }
+  },
+  {
+    week: 20, phase: "peak", dates: "21–27 Sep", hours: "7.5h",
+    note: "RECOVERY TAPER — another 3-week recovery hit. 3 weeks to race. Volume low, one Z4 session per discipline.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_easy", detail: "Pool 1,400m easy Z2." },
+        { type: "bike_gym", detail: "Gym bike 40 min easy. Add 3×2 min Z4 openers." },
+      ],
+      Wed: [
+        { type: "gym_legs", detail: "Gym Legs — Taper: 2×12, 30s rest, light. 15 min max." },
+      ],
+      Thu: [
+        { type: "run_easy", detail: "35 min easy. Include 5×1 min at Z4 effort (4:55–5:20/km) with full recovery. Keeps legs sharp without fatiguing." },
+        { type: "gym_upper", detail: "Gym Upper — Taper: 2×12, 30s rest, light. 15 min max." },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 25 min, ~1,100m easy Z1–Z2." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Ride 1h45m Z2 with 4×4 min Z4 openers. Legs should feel good." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Run 55 min Z2. Legs feeling springy? That's taper magic." },
+      ],
+    }
+  },
+  {
+    week: 21, phase: "peak", dates: "28 Sep – 4 Oct", hours: "6h",
+    note: "TAPER — 2 weeks out. Volume minimal. Intensity maintained in short bursts. Trust the process.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest." },
+      ],
+      Tue: [
+        { type: "swim_intervals", detail: "Pool 1,800m. WU: 400m. Main: 4×300m Z4 (1:48–1:58/100m, 20 sec rest). CD: 400m. Short, sharp, quality." },
+        { type: "bike_intervals", detail: "50 min. WU: 15 min. Main: 3×6 min Z4 with 3 min Z2. CD: 10 min. Race sharpness maintained." },
+      ],
+      Wed: [
+        { type: "gym_legs", detail: "Gym Legs — Taper: 2×12, light. Activation only. No gym next week." },
+      ],
+      Thu: [
+        { type: "run_intervals", detail: "40 min. WU: 10 min. Main: 3×4 min Z4 with 3 min Z1 jog. CD: 10 min. Short and sharp." },
+        { type: "gym_upper", detail: "Gym Upper — Taper: 2×12, light. No gym next week." },
+      ],
+      Fri: [
+        { type: "swim_ow", detail: "Open water 30 min, ~1,400m. Smooth and confident. You've done the work." },
+      ],
+      Sat: [
+        { type: "bike_long", detail: "Ride 1h30m Z2. ~40–48 km. Check all gear, nutrition, bike setup." },
+      ],
+      Sun: [
+        { type: "run_long", detail: "Run 45 min Z2. ~7 km. Short and relaxed. Legs should feel coiled." },
+      ],
+    }
+  },
+  {
+    week: 22, phase: "peak", dates: "5–11 Oct", hours: "3.5h",
+    note: "RACE WEEK — minimum volume. No gym. Preserve what you've built. Sleep, eat, prepare.",
+    days: {
+      Mon: [
+        { type: "rest", detail: "Rest. Begin carb loading gradually. Familiar foods only." },
+      ],
+      Tue: [
+        { type: "swim_easy", detail: "Pool 1,000m easy Z1–Z2. Feel the water. Note how good your stroke feels after the taper." },
+        { type: "bike_intervals", detail: "30 min. WU: 10 min. Main: 3×3 min Z4 sharpeners. CD: 8 min. Nothing more." },
+      ],
+      Wed: [
+        { type: "swim_ow", detail: "Open water 20 min easy. Sight, feel comfortable. That's it." },
+      ],
+      Thu: [
+        { type: "run_easy", detail: "20 min easy Z1. Legs should feel bouncy. That's taper magic." },
+      ],
+      Fri: [
+        { type: "rest", detail: "Rest. Travel to Port Macquarie. Gear check. Carb-rich dinner. In bed by 9:30 pm." },
+      ],
+      Sat: [
+        { type: "rest", detail: "Light 10 min jog. Rack bike. Attend race briefing. Familiar dinner. In bed by 9 pm." },
+      ],
+      Sun: [
+        { type: "race", detail: "RACE DAY — IRONMAN 70.3 PORT MACQUARIE\n\nHastings River swim → Pacific coast bike → Port Macquarie run\n\nSWIM 1.9km: Target 38–40 min (2:00–2:05/100m). You've swum 1,900m non-stop three times in training. This is covered. Start controlled.\n\nBIKE 90km: Target 2h39–2h49 (32–34 km/h avg). First 20km Z2. Build to Z3 from km 20. Fuel every 20 min (200–250 cal/hr).\n\nRUN 21.1km: Target 2h01–2h05 (5:45–5:55/km). Start first 3km at 6:05/km. Negative split.\n\nTOTAL TARGET: 5:20–5:35\nConservative: 5:35 · Realistic: 5:25 · Stretch: sub-5:15\n\nYOU'VE DONE THE WORK. RACE YOUR PLAN." },
+      ],
+    }
+  },
+];
+render();
+</script>
+
+</body>
+</html>
